@@ -14,7 +14,7 @@ export const PUT: APIRoute = async ({ params, locals }) => {
     const order = rows[0];
 
     await sql`
-      UPDATE orders SET status = 'approved', updated_at = NOW()
+      UPDATE orders SET status = 'approved', expires_at = NOW() + INTERVAL '30 days', updated_at = NOW()
       WHERE id = ${params.id!}
     `;
 

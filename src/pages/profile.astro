@@ -4,20 +4,27 @@ import { sql } from '../lib/db';
 
 const user = Astro.locals.user!;
 
-// Check if customer has at least 1 approved order
+// Check if customer has at least 1 approved order that hasn't expired
 let hasApprovedOrder = false;
+let expiresAt: Date | null = null;
 let bypassLink: string | null = null;
 let tutorialVideoUrl: string | null = null;
 
 if (user.role === 'customer') {
   const [orderCheck, settings] = await Promise.all([
-    sql`SELECT 1 FROM orders WHERE user_id = ${user.userId} AND status = 'approved' LIMIT 1`.catch(() => []),
+    sql`SELECT expires_at FROM orders WHERE user_id = ${user.userId} AND status = 'approved' AND (expires_at IS NULL OR expires_at > NOW()) ORDER BY expires_at DESC NULLS LAST LIMIT 1`.catch(() => []),
     sql`SELECT bypass_link, tutorial_video_url FROM qris_settings WHERE id = 1`.catch(() => []),
   ]);
   hasApprovedOrder = orderCheck.length > 0;
+  expiresAt = orderCheck[0]?.expires_at ? new Date(orderCheck[0].expires_at) : null;
   bypassLink = settings[0]?.bypass_link ?? null;
   tutorialVideoUrl = settings[0]?.tutorial_video_url ?? null;
 }
+
+// Sisa hari akses
+const daysLeft = expiresAt
+  ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+  : null;
 
 // Convert Google Drive share link to embed URL
 function toGDriveEmbed(url: string): string {
@@ -60,10 +67,21 @@ function toGDriveEmbed(url: string): string {
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                 </svg>
               </div>
-              <div>
+              <div class="flex-1 min-w-0">
                 <p class="font-semibold text-white text-sm">File Bypass</p>
                 <p class="text-xs text-muted">Tersedia karena kamu sudah melakukan pembelian</p>
               </div>
+              {daysLeft !== null && (
+                <span class={`text-xs font-semibold px-2.5 py-1 rounded-full border shrink-0 ${
+                  daysLeft <= 5
+                    ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                    : daysLeft <= 10
+                      ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                      : 'bg-green-500/10 text-green-400 border-green-500/20'
+                }`}>
+                  {daysLeft} hari lagi
+                </span>
+              )}
             </div>
             <a
               href={bypassLink}

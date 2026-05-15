@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS orders (
   proof_image_url TEXT,
   proof_public_id TEXT,
   wa_reminded_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
