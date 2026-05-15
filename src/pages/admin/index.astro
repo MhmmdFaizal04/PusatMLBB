@@ -34,8 +34,8 @@ const recentOrders = (await sql`
 const maxVisitors = Math.max(...dailyData.map((d: any) => d.visitors as number), 1);
 
 // SVG line chart calculations (viewBox 300x100, chart area: left=24, right=8, top=8, bottom=24)
-const svgW = 300, svgH = 100;
-const padL = 24, padR = 8, padT = 8, padB = 24;
+const svgW = 300, svgH = 130;
+const padL = 24, padR = 8, padT = 10, padB = 28;
 const chartW = svgW - padL - padR;
 const chartH = svgH - padT - padB;
 const n = dailyData.length;
@@ -72,12 +72,13 @@ const fillPath = points.length > 0
 
   <div class="grid lg:grid-cols-2 gap-6">
     <!-- Visitor Chart -->
-    <div class="bg-surface border border-border rounded-2xl p-5">
-      <h2 class="font-semibold text-white mb-4 text-sm">Pengunjung 14 Hari Terakhir</h2>
+    <div class="bg-surface border border-border rounded-2xl p-5 flex flex-col">
+      <h2 class="font-semibold text-white mb-4 text-sm shrink-0">Pengunjung 14 Hari Terakhir</h2>
       {dailyData.length === 0 ? (
         <p class="text-muted text-sm text-center py-8">Belum ada data.</p>
       ) : (
-        <svg viewBox={`0 0 ${svgW} ${svgH}`} class="w-full" style="height: 140px" xmlns="http://www.w3.org/2000/svg">
+        <div class="flex-1 min-h-0" style="min-height: 200px">
+          <svg viewBox={`0 0 ${svgW} ${svgH}`} class="w-full h-full" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#F97316" stop-opacity="0.3"/>
@@ -129,6 +130,7 @@ const fillPath = points.length > 0
             </>
           ))}
         </svg>
+        </div>
       )}
     </div>
 
