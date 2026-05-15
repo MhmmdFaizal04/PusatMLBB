@@ -18,8 +18,8 @@ export const PUT: APIRoute = async ({ params, locals }) => {
       WHERE id = ${params.id!}
     `;
 
-    // Kurangi stok hanya jika sebelumnya masih pending (hindari double-kurang)
-    if (order.status === 'pending') {
+    // Kurangi stok hanya jika belum pernah approved (hindari double-kurang)
+    if (order.status !== 'approved') {
       const items = await sql`
         SELECT product_id, quantity FROM order_items
         WHERE order_id = ${params.id!} AND product_id IS NOT NULL
