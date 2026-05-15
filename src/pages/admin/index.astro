@@ -59,21 +59,36 @@ const maxVisitors = Math.max(...dailyData.map((d: any) => d.visitors as number),
       {dailyData.length === 0 ? (
         <p class="text-muted text-sm text-center py-8">Belum ada data.</p>
       ) : (
-        <div class="flex items-end gap-1 h-32">
-          {dailyData.map((d: any) => {
-            const height = Math.max(4, Math.round((d.visitors / maxVisitors) * 100));
-            return (
-              <div class="flex-1 flex flex-col items-center gap-1 group">
-                <span class="text-[9px] text-muted opacity-0 group-hover:opacity-100 transition-opacity">{d.visitors}</span>
-                <div
-                  class="w-full bg-brand/40 hover:bg-brand rounded transition-colors"
-                  style={`height: ${height}%`}
-                  title={`${new Date(d.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}: ${d.visitors} pengunjung`}
-                ></div>
-                <span class="text-[8px] text-muted rotate-45 origin-left hidden sm:block">{new Date(d.date).getDate()}/{new Date(d.date).getMonth() + 1}</span>
+        <div class="flex flex-col gap-2">
+          <!-- Bars -->
+          <div class="flex items-end gap-1" style="height: 120px">
+            {dailyData.map((d: any) => {
+              const pxHeight = Math.max(4, Math.round((d.visitors / maxVisitors) * 112));
+              const label = new Date(d.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+              return (
+                <div class="flex-1 flex flex-col items-center justify-end h-full group relative">
+                  <span class="absolute -top-5 text-[9px] text-white bg-surface-2 px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                    {d.visitors}
+                  </span>
+                  <div
+                    class="w-full bg-brand/40 hover:bg-brand rounded-sm transition-colors cursor-default"
+                    style={`height: ${pxHeight}px`}
+                    title={`${label}: ${d.visitors} pengunjung`}
+                  ></div>
+                </div>
+              );
+            })}
+          </div>
+          <!-- X-axis labels -->
+          <div class="flex gap-1">
+            {dailyData.map((d: any) => (
+              <div class="flex-1 text-center">
+                <span class="text-[8px] text-muted leading-none">
+                  {new Date(d.date).getDate()}/{new Date(d.date).getMonth() + 1}
+                </span>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       )}
     </div>
