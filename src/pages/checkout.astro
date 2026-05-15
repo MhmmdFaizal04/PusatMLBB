@@ -1,0 +1,175 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { sql } from '../lib/db';
+
+const user = Astro.locals.user!;
+
+const [cartItems, qrisRows] = (await Promise.all([
+  sql`
+    SELECT ci.quantity, p.id AS product_id, p.name, p.price, p.stock, p.is_available
+    FROM cart_items ci JOIN products p ON p.id = ci.product_id
+    WHERE ci.user_id = ${user.userId}
+  `.catch(() => []),
+  sql`SELECT image_url FROM qris_settings WHERE id = 1`.catch(() => []),
+])) as [any[], any[]];
+
+if (cartItems.length === 0) return Astro.redirect('/cart');
+
+const total = cartItems.reduce(
+  (s: number, i: any) => s + (i.price as number) * (i.quantity as number), 0
+);
+const qrisUrl = qrisRows[0]?.image_url ?? null;
+
+const fmt = (p: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
+---
+
+<Layout title="Checkout - PusatMLBB">
+  <div class="max-w-2xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-black text-white mb-6">Pembayaran</h1>
+
+    <!-- Order Summary -->
+    <div class="bg-surface border border-border rounded-2xl p-5 mb-5">
+      <h2 class="font-semibold text-white mb-3 text-sm">Ringkasan Pesanan</h2>
+      <div class="flex flex-col gap-2">
+        {cartItems.map((item: any) => (
+          <div class="flex justify-between text-sm">
+            <span class="text-muted">{item.name} x{item.quantity}</span>
+            <span class="text-white font-medium">{fmt(item.price * item.quantity)}</span>
+          </div>
+        ))}
+        <div class="border-t border-border pt-2 mt-1 flex justify-between font-bold">
+          <span class="text-white">Total</span>
+          <span class="text-brand text-lg">{fmt(total)}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- QRIS Payment -->
+    <div class="bg-surface border border-border rounded-2xl p-5 mb-5">
+      <h2 class="font-semibold text-white mb-3 text-sm">Scan QRIS untuk Transfer</h2>
+      {qrisUrl ? (
+        <div class="flex flex-col items-center gap-3">
+          <div class="bg-white p-3 rounded-xl inline-block">
+            <img src={qrisUrl} alt="QRIS Payment PusatMLBB" class="w-56 h-56 object-contain" />
+          </div>
+          <p class="text-muted text-xs text-center">Transfer tepat <span class="text-brand font-bold">{fmt(total)}</span></p>
+        </div>
+      ) : (
+        <div class="text-center py-6 text-muted text-sm">
+          QRIS belum disetup. Hubungi admin.
+        </div>
+      )}
+    </div>
+
+    <!-- Upload Proof -->
+    <div class="bg-surface border border-border rounded-2xl p-5">
+      <h2 class="font-semibold text-white mb-1 text-sm">Upload Bukti Transfer</h2>
+      <p class="text-muted text-xs mb-4">Upload screenshot/foto bukti transfer. Format: JPG, PNG (maks 5MB)</p>
+
+      <div id="error-msg" class="hidden mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"></div>
+
+      <div class="mb-4">
+        <label class="block cursor-pointer">
+          <input type="file" id="proof-input" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" />
+          <div id="drop-area" class="border-2 border-dashed border-border hover:border-brand/40 rounded-xl p-8 text-center transition-colors">
+            <svg class="w-10 h-10 mx-auto text-muted mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <p class="text-muted text-sm">Klik untuk pilih file</p>
+          </div>
+        </label>
+        <div id="preview-container" class="hidden mt-3">
+          <img id="preview-img" src="" alt="Preview bukti bayar" class="max-h-48 rounded-xl border border-border mx-auto" />
+          <p id="preview-name" class="text-xs text-muted text-center mt-1"></p>
+        </div>
+      </div>
+
+      <button
+        id="submit-btn"
+        class="w-full py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        Kirim Pesanan
+      </button>
+
+      <div id="progress" class="hidden mt-3">
+        <div class="w-full bg-surface-3 rounded-full h-1.5">
+          <div id="progress-bar" class="bg-brand h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <p id="progress-text" class="text-xs text-muted text-center mt-1">Mengupload...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById('proof-input') as HTMLInputElement;
+    const previewContainer = document.getElementById('preview-container')!;
+    const previewImg = document.getElementById('preview-img') as HTMLImageElement;
+    const previewName = document.getElementById('preview-name')!;
+    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const errorMsg = document.getElementById('error-msg')!;
+    const progress = document.getElementById('progress')!;
+    const progressBar = document.getElementById('progress-bar')!;
+    const progressText = document.getElementById('progress-text')!;
+
+    input.addEventListener('change', () => {
+      const file = input.files?.[0];
+      if (file) {
+        previewImg.src = URL.createObjectURL(file);
+        previewName.textContent = file.name;
+        previewContainer.classList.remove('hidden');
+      }
+    });
+
+    submitBtn.addEventListener('click', async () => {
+      const file = input.files?.[0];
+      if (!file) {
+        errorMsg.textContent = 'Pilih bukti pembayaran terlebih dahulu';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      errorMsg.classList.add('hidden');
+      progress.classList.remove('hidden');
+      progressBar.style.width = '30%';
+      progressText.textContent = 'Mengupload bukti...';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'proofs');
+
+        const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+        const uploadData = await uploadRes.json();
+
+        if (!uploadRes.ok) {
+          throw new Error(uploadData.error || 'Gagal mengupload gambar');
+        }
+
+        progressBar.style.width = '70%';
+        progressText.textContent = 'Membuat pesanan...';
+
+        const orderRes = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ proofUrl: uploadData.url, proofPublicId: uploadData.publicId }),
+        });
+        const orderData = await orderRes.json();
+
+        if (!orderRes.ok) {
+          throw new Error(orderData.error || 'Gagal membuat pesanan');
+        }
+
+        progressBar.style.width = '100%';
+        progressText.textContent = 'Pesanan berhasil dibuat!';
+        setTimeout(() => (window.location.href = '/orders'), 800);
+      } catch (err) {
+        errorMsg.textContent = (err as Error).message;
+        errorMsg.classList.remove('hidden');
+        progress.classList.add('hidden');
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</Layout>

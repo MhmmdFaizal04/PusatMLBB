@@ -1,0 +1,108 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { sql } from '../lib/db';
+
+const user = Astro.locals.user!;
+const orders = (await sql`
+  SELECT o.id, o.total_amount, o.status, o.proof_image_url, o.wa_reminded_at,
+         o.created_at, o.updated_at
+  FROM orders o
+  WHERE o.user_id = ${user.userId}
+  ORDER BY o.created_at DESC
+`.catch(() => [])) as any[];
+
+const orderIds = orders.map((o: any) => o.id);
+let orderItems: any[] = [];
+if (orderIds.length > 0) {
+  orderItems = await sql`
+    SELECT oi.order_id, oi.product_name, oi.quantity, oi.price_at_purchase
+    FROM order_items oi WHERE oi.order_id = ANY(${orderIds})
+  `.catch(() => []);
+}
+
+const waNumber = import.meta.env.PUBLIC_WA_ADMIN ?? '62895401426305';
+
+const fmt = (p: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
+
+const statusLabel: Record<string, { label: string; cls: string }> = {
+  pending_payment: { label: 'Menunggu Bayar', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
+  pending_approval: { label: 'Menunggu Konfirmasi', cls: 'bg-orange-500/10 text-brand border-brand/20' },
+  approved: { label: 'Disetujui', cls: 'bg-green-500/10 text-green-400 border-green-500/20' },
+  rejected: { label: 'Ditolak', cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
+};
+---
+
+<Layout title="Pesanan Saya - PusatMLBB">
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-black text-white mb-6">Pesanan Saya</h1>
+
+    {orders.length === 0 ? (
+      <div class="text-center py-20 bg-surface border border-border rounded-2xl">
+        <p class="text-muted">Belum ada pesanan.</p>
+        <a href="/products" class="mt-3 inline-block text-brand hover:underline text-sm">Mulai belanja</a>
+      </div>
+    ) : (
+      <div class="flex flex-col gap-4">
+        {orders.map((order: any) => {
+          const items = orderItems.filter((i: any) => i.order_id === order.id);
+          const st = statusLabel[order.status] ?? { label: order.status, cls: 'bg-surface-3 text-muted border-border' };
+          const waText = encodeURIComponent(
+            `Halo Admin PusatMLBB, saya sudah transfer untuk Order #${order.id.slice(0, 8)}...\nTotal: ${fmt(order.total_amount)}\nBukti: ${order.proof_image_url ?? '-'}\nMohon segera dikonfirmasi.`
+          );
+          const waLink = `https://wa.me/${waNumber}?text=${waText}`;
+          return (
+            <div class="bg-surface border border-border rounded-2xl p-5">
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <p class="text-xs text-muted">ID: <span class="font-mono">{order.id.slice(0, 8)}...</span></p>
+                  <p class="text-xs text-muted mt-0.5">{new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                <span class={`text-xs font-semibold px-2.5 py-1 rounded-full border shrink-0 ${st.cls}`}>{st.label}</span>
+              </div>
+
+              <!-- Items -->
+              <div class="flex flex-col gap-1 mb-3">
+                  {items.map((item: any) => (
+                  <div class="flex justify-between text-sm">
+                    <span class="text-muted">{item.product_name} x{item.quantity}</span>
+                    <span class="text-white">{fmt(item.price_at_purchase * item.quantity)}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div class="flex items-center justify-between border-t border-border pt-3">
+                <span class="font-bold text-brand">{fmt(order.total_amount)}</span>
+                <div class="flex items-center gap-2">
+                  {order.proof_image_url && (
+                    <a href={order.proof_image_url} target="_blank" rel="noopener noreferrer"
+                      class="text-xs text-muted hover:text-white border border-border px-3 py-1.5 rounded-lg transition-colors">
+                      Lihat Bukti
+                    </a>
+                  )}
+                  {order.status === 'approved' && (
+                    <a href="/files" class="text-xs bg-green-500/10 text-green-400 border border-green-500/20 px-3 py-1.5 rounded-lg hover:bg-green-500/20 transition-colors">
+                      Download File
+                    </a>
+                  )}
+                  {order.status === 'pending_approval' && (
+                    <a
+                      href={waLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onclick={`fetch('/api/orders/${order.id}/remind', {method:'PUT'})`}
+                      class="text-xs bg-green-600/20 text-green-400 border border-green-600/20 px-3 py-1.5 rounded-lg hover:bg-green-600/30 transition-colors flex items-center gap-1"
+                    >
+                      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.1.543 4.08 1.5 5.81L0 24l6.337-1.663A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.854 0-3.6-.484-5.112-1.33L3 22l1.358-4.77A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                      Ingatkan Admin
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</Layout>

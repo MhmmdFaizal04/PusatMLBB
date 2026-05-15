@@ -1,0 +1,280 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { sql } from '../../../lib/db';
+
+const products = await sql`
+  SELECT p.*, c.name AS category_name
+  FROM products p LEFT JOIN categories c ON c.id = p.category_id
+  ORDER BY p.created_at DESC
+`.catch(() => []);
+
+const categories = await sql`SELECT * FROM categories ORDER BY name`.catch(() => []);
+
+const fmt = (p: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
+---
+
+<AdminLayout title="Produk - PusatMLBB">
+  <div class="flex items-center justify-between mb-6">
+    <p class="text-muted text-sm">{products.length} produk total</p>
+    <button id="add-btn" class="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-xl transition-colors">
+      + Tambah Produk
+    </button>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-surface border border-border rounded-2xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="border-b border-border">
+          <tr class="text-left">
+            <th class="px-4 py-3 text-xs font-semibold text-muted">Produk</th>
+            <th class="px-4 py-3 text-xs font-semibold text-muted hidden md:table-cell">Kategori</th>
+            <th class="px-4 py-3 text-xs font-semibold text-muted">Harga</th>
+            <th class="px-4 py-3 text-xs font-semibold text-muted">Stok</th>
+            <th class="px-4 py-3 text-xs font-semibold text-muted">Status</th>
+            <th class="px-4 py-3 text-xs font-semibold text-muted text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="products-tbody">
+          {products.map((p: any) => (
+            <tr class="border-b border-border last:border-0 hover:bg-surface-2 transition-colors" data-id={p.id}>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-surface-2 overflow-hidden shrink-0">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} class="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <div class="w-full h-full flex items-center justify-center text-border">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      </div>
+                    )}
+                  </div>
+                  <span class="font-medium text-white truncate max-w-36">{p.name}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-muted hidden md:table-cell">{p.category_name ?? '-'}</td>
+              <td class="px-4 py-3 text-brand font-bold">{fmt(p.price)}</td>
+              <td class="px-4 py-3 text-white">{p.stock}</td>
+              <td class="px-4 py-3">
+                <span class={`text-xs font-semibold px-2 py-0.5 rounded-full border ${p.is_available ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-surface-3 text-muted border-border'}`}>
+                  {p.is_available ? 'Aktif' : 'Nonaktif'}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-2">
+                  <button
+                    class="edit-btn text-xs px-3 py-1.5 bg-surface-3 hover:bg-surface-2 border border-border text-white rounded-lg transition-colors"
+                    data-product={JSON.stringify({
+                      id: p.id, name: p.name, description: p.description ?? '',
+                      price: p.price, stock: p.stock, is_available: p.is_available,
+                      category_id: p.category_id ?? '', download_link: p.download_link ?? '',
+                      image_url: p.image_url ?? ''
+                    })}
+                  >Edit</button>
+                  <button
+                    class="del-btn text-xs px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-lg transition-colors"
+                    data-id={p.id} data-name={p.name}
+                  >Hapus</button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {products.length === 0 && (
+        <div class="text-center py-12 text-muted text-sm">Belum ada produk.</div>
+      )}
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-surface-2 border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-surface-2">
+        <h2 id="modal-title" class="font-bold text-white">Tambah Produk</h2>
+        <button id="modal-close" class="text-muted hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <form id="product-form" class="p-5 flex flex-col gap-4">
+        <input type="hidden" id="edit-id" />
+        <div class="grid grid-cols-2 gap-3">
+          <div class="col-span-2">
+            <label class="block text-xs font-medium text-white mb-1">Nama Produk *</label>
+            <input id="f-name" type="text" required placeholder="Cheat Mobile Legends..."
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors" />
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-medium text-white mb-1">Deskripsi</label>
+            <textarea id="f-desc" rows="3" placeholder="Deskripsi produk..."
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-white mb-1">Harga (IDR) *</label>
+            <input id="f-price" type="number" min="0" required placeholder="25000"
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-white mb-1">Stok *</label>
+            <input id="f-stock" type="number" min="0" required placeholder="10"
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors" />
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-medium text-white mb-1">Kategori</label>
+            <select id="f-category"
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand/50 transition-colors">
+              <option value="">-- Pilih Kategori --</option>
+              {categories.map((c: any) => (
+                <option value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-medium text-white mb-1">Link Download (MediaFire)</label>
+            <input id="f-link" type="url" placeholder="https://mediafire.com/..."
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors" />
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-medium text-white mb-1">Gambar Produk</label>
+            <input id="f-image" type="file" accept="image/jpeg,image/png,image/webp"
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-muted text-sm file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-brand/10 file:text-brand file:text-xs file:font-medium cursor-pointer" />
+            <div id="img-preview-container" class="hidden mt-2">
+              <img id="img-preview" src="" alt="" class="h-24 rounded-lg object-cover border border-border" />
+            </div>
+          </div>
+          <div class="col-span-2 flex items-center gap-3">
+            <input type="checkbox" id="f-available" checked class="w-4 h-4 accent-orange-500 rounded" />
+            <label for="f-available" class="text-sm text-white cursor-pointer">Produk tersedia / aktif</label>
+          </div>
+        </div>
+
+        <div id="form-error" class="hidden p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs"></div>
+
+        <div class="flex gap-3 pt-1">
+          <button type="button" id="modal-cancel" class="flex-1 py-2.5 bg-surface-3 hover:bg-surface border border-border text-white text-sm font-medium rounded-xl transition-colors">
+            Batal
+          </button>
+          <button type="submit" id="form-submit" class="flex-1 py-2.5 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60">
+            Simpan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('modal')!;
+    const modalTitle = document.getElementById('modal-title')!;
+    const editIdInput = document.getElementById('edit-id') as HTMLInputElement;
+    const form = document.getElementById('product-form') as HTMLFormElement;
+    const formError = document.getElementById('form-error')!;
+    const submitBtn = document.getElementById('form-submit') as HTMLButtonElement;
+
+    function openModal(title: string) {
+      modalTitle.textContent = title;
+      modal.classList.remove('hidden');
+    }
+    function closeModal() {
+      modal.classList.add('hidden');
+      form.reset();
+      editIdInput.value = '';
+      (document.getElementById('img-preview-container') as HTMLElement).classList.add('hidden');
+      formError.classList.add('hidden');
+    }
+
+    document.getElementById('add-btn')!.addEventListener('click', () => openModal('Tambah Produk'));
+    document.getElementById('modal-close')!.addEventListener('click', closeModal);
+    document.getElementById('modal-cancel')!.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    // Image preview
+    document.getElementById('f-image')!.addEventListener('change', (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const preview = document.getElementById('img-preview') as HTMLImageElement;
+        preview.src = URL.createObjectURL(file);
+        document.getElementById('img-preview-container')!.classList.remove('hidden');
+      }
+    });
+
+    // Edit buttons
+    document.addEventListener('click', (e) => {
+      const editBtn = (e.target as HTMLElement).closest('.edit-btn') as HTMLElement | null;
+      if (editBtn) {
+        const p = JSON.parse(editBtn.dataset.product!);
+        editIdInput.value = p.id;
+        (document.getElementById('f-name') as HTMLInputElement).value = p.name;
+        (document.getElementById('f-desc') as HTMLTextAreaElement).value = p.description;
+        (document.getElementById('f-price') as HTMLInputElement).value = p.price;
+        (document.getElementById('f-stock') as HTMLInputElement).value = p.stock;
+        (document.getElementById('f-category') as HTMLSelectElement).value = String(p.category_id);
+        (document.getElementById('f-link') as HTMLInputElement).value = p.download_link;
+        (document.getElementById('f-available') as HTMLInputElement).checked = p.is_available;
+        if (p.image_url) {
+          (document.getElementById('img-preview') as HTMLImageElement).src = p.image_url;
+          document.getElementById('img-preview-container')!.classList.remove('hidden');
+        }
+        openModal('Edit Produk');
+      }
+
+      const delBtn = (e.target as HTMLElement).closest('.del-btn') as HTMLElement | null;
+      if (delBtn) {
+        const id = delBtn.dataset.id!;
+        const name = delBtn.dataset.name!;
+        if (confirm(`Hapus produk "${name}"? Tindakan ini tidak bisa dibatalkan.`)) {
+          fetch(`/api/products/${id}`, { method: 'DELETE' })
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.ok) {
+                delBtn.closest('tr')?.remove();
+              } else {
+                alert(d.error || 'Gagal menghapus');
+              }
+            });
+        }
+      }
+    });
+
+    // Form submit
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      formError.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Menyimpan...';
+
+      const id = editIdInput.value;
+      const isEdit = !!id;
+      const fd = new FormData();
+      fd.append('name', (document.getElementById('f-name') as HTMLInputElement).value);
+      fd.append('description', (document.getElementById('f-desc') as HTMLTextAreaElement).value);
+      fd.append('price', (document.getElementById('f-price') as HTMLInputElement).value);
+      fd.append('stock', (document.getElementById('f-stock') as HTMLInputElement).value);
+      fd.append('category_id', (document.getElementById('f-category') as HTMLSelectElement).value);
+      fd.append('download_link', (document.getElementById('f-link') as HTMLInputElement).value);
+      fd.append('is_available', String((document.getElementById('f-available') as HTMLInputElement).checked));
+      const imgFile = (document.getElementById('f-image') as HTMLInputElement).files?.[0];
+      if (imgFile) fd.append('image', imgFile);
+
+      try {
+        const url = isEdit ? `/api/products/${id}` : '/api/products';
+        const method = isEdit ? 'PUT' : 'POST';
+        const res = await fetch(url, { method, body: fd });
+        const data = await res.json();
+        if (res.ok) {
+          closeModal();
+          window.location.reload();
+        } else {
+          formError.textContent = data.error || 'Gagal menyimpan';
+          formError.classList.remove('hidden');
+        }
+      } catch {
+        formError.textContent = 'Terjadi kesalahan';
+        formError.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Simpan';
+      }
+    });
+  </script>
+</AdminLayout>

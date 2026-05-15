@@ -1,0 +1,153 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { sql } from '../../lib/db';
+
+const search = Astro.url.searchParams.get('search') || '';
+const category = Astro.url.searchParams.get('category') || '';
+const page = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1'));
+const limit = 12;
+const offset = (page - 1) * limit;
+
+const [products, countResult] = (await Promise.all([
+  sql`
+    SELECT p.id, p.name, p.description, p.price, p.stock, p.is_available, p.image_url,
+           c.name AS category_name, c.slug AS category_slug
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p.is_available = TRUE
+      AND (${search} = '' OR p.name ILIKE ${'%' + search + '%'})
+      AND (${category} = '' OR c.slug = ${category})
+    ORDER BY p.created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `.catch(() => []),
+  sql`
+    SELECT COUNT(*)::int AS total FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p.is_available = TRUE
+      AND (${search} = '' OR p.name ILIKE ${'%' + search + '%'})
+      AND (${category} = '' OR c.slug = ${category})
+  `.catch(() => [{ total: 0 }]),
+])) as [any[], any[]];
+
+const categories = (await sql`SELECT * FROM categories ORDER BY name`.catch(() => [])) as any[];
+
+const total = countResult[0]?.total ?? 0;
+const totalPages = Math.ceil(total / limit);
+
+const fmt = (p: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
+
+const pageTitle = category
+  ? `Cheat ${categories.find((c: { slug: string; name: string }) => c.slug === category)?.name ?? category} - PusatMLBB`
+  : search
+  ? `Hasil pencarian "${search}" - PusatMLBB`
+  : 'Semua Produk Cheat - PusatMLBB';
+---
+
+<Layout
+  title={pageTitle}
+  description={`Jual cheat Mobile Legends, Free Fire, PUBG Mobile terpercaya. ${search ? `Hasil pencarian: ${search}.` : ''} Anti banned, harga murah.`}
+  canonicalPath="/products"
+>
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header + Search -->
+    <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+      <div>
+        <h1 class="text-2xl font-black text-white">
+          {category ? `Cheat ${categories.find((c: { slug: string; name: string }) => c.slug === category)?.name ?? ''}` : 'Semua Produk'}
+        </h1>
+        <p class="text-muted text-sm mt-0.5">{total} produk ditemukan</p>
+      </div>
+      <form method="GET" action="/products" class="sm:ml-auto flex gap-2">
+        {category && <input type="hidden" name="category" value={category} />}
+        <input
+          type="search" name="search" value={search}
+          placeholder="Cari produk..."
+          class="bg-surface-2 border border-border rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 w-full sm:w-64 transition-colors"
+        />
+        <button type="submit" class="px-4 py-2.5 bg-brand hover:bg-brand-hover text-white text-sm font-medium rounded-xl transition-colors shrink-0">
+          Cari
+        </button>
+      </form>
+    </div>
+
+    <!-- Category tabs -->
+    <div class="flex flex-wrap gap-2 mb-6 overflow-x-auto pb-1">
+      <a
+        href="/products"
+        class={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${!category ? 'bg-brand text-white' : 'bg-surface-2 text-muted hover:text-white border border-border'}`}
+      >
+        Semua
+      </a>
+      {categories.map((cat: any) => (
+        <a
+          href={`/products?category=${cat.slug}${search ? '&search=' + search : ''}`}
+          class={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${category === cat.slug ? 'bg-brand text-white' : 'bg-surface-2 text-muted hover:text-white border border-border'}`}
+        >
+          {cat.name}
+        </a>
+      ))}
+    </div>
+
+    <!-- Products Grid -->
+    {products.length === 0 ? (
+      <div class="text-center py-20">
+        <p class="text-muted text-lg">Tidak ada produk ditemukan.</p>
+        <a href="/products" class="mt-4 inline-block text-brand hover:underline text-sm">Lihat semua produk</a>
+      </div>
+    ) : (
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {products.map((p: { id: string; name: string; price: number; image_url: string | null; stock: number; is_available: boolean; category_name: string; description: string }) => (
+          <a href={`/products/${p.id}`} class="group bg-surface border border-border rounded-2xl overflow-hidden hover:border-brand/40 transition-all hover:-translate-y-0.5">
+            <div class="aspect-[4/3] bg-surface-2 overflow-hidden">
+              {p.image_url ? (
+                <img src={p.image_url} alt={`Cheat ${p.name} anti banned`} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+              ) : (
+                <div class="w-full h-full flex items-center justify-center text-border">
+                  <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                </div>
+              )}
+            </div>
+            <div class="p-3">
+              {p.category_name && <span class="text-[10px] font-semibold text-brand uppercase tracking-wide">{p.category_name}</span>}
+              <h2 class="text-sm font-semibold text-white mt-0.5 line-clamp-2">{p.name}</h2>
+              <div class="flex items-center justify-between mt-2 gap-1">
+                <span class="text-brand font-bold text-sm">{fmt(p.price)}</span>
+                {p.stock > 0 && p.is_available ? (
+                  <span class="text-[10px] font-medium shrink-0 text-green-400 bg-green-400/10 border border-green-400/20 px-1.5 py-0.5 rounded-full">
+                    Sisa {p.stock}
+                  </span>
+                ) : (
+                  <span class="text-[10px] font-medium shrink-0 text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full">
+                    Habis
+                  </span>
+                )}
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+
+    <!-- Pagination -->
+    {totalPages > 1 && (
+      <div class="flex justify-center gap-2 mt-8">
+        {page > 1 && (
+          <a href={`/products?page=${page - 1}${category ? '&category=' + category : ''}${search ? '&search=' + search : ''}`}
+            class="px-4 py-2 bg-surface-2 border border-border text-muted hover:text-white rounded-lg text-sm transition-colors">
+            Sebelumnya
+          </a>
+        )}
+        <span class="px-4 py-2 bg-brand/10 border border-brand/20 text-brand rounded-lg text-sm font-medium">
+          {page} / {totalPages}
+        </span>
+        {page < totalPages && (
+          <a href={`/products?page=${page + 1}${category ? '&category=' + category : ''}${search ? '&search=' + search : ''}`}
+            class="px-4 py-2 bg-surface-2 border border-border text-muted hover:text-white rounded-lg text-sm transition-colors">
+            Berikutnya
+          </a>
+        )}
+      </div>
+    )}
+  </div>
+</Layout>

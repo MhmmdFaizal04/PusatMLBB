@@ -1,0 +1,146 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { sql } from '../lib/db';
+
+const user = Astro.locals.user!;
+const cartItems = (await sql`
+  SELECT ci.id, ci.quantity,
+         p.id AS product_id, p.name, p.price, p.image_url, p.stock, p.is_available
+  FROM cart_items ci
+  JOIN products p ON p.id = ci.product_id
+  WHERE ci.user_id = ${user.userId}
+  ORDER BY ci.id
+`.catch(() => [])) as any[];
+
+const total = cartItems.reduce(
+  (s: number, i: any) => s + i.price * i.quantity, 0
+);
+
+const fmt = (p: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
+---
+
+<Layout title="Keranjang - PusatMLBB">
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-black text-white mb-6">Keranjang Belanja</h1>
+
+    {cartItems.length === 0 ? (
+      <div class="text-center py-20 bg-surface border border-border rounded-2xl">
+        <svg class="w-16 h-16 mx-auto text-border mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <p class="text-muted font-medium">Keranjang kosong</p>
+        <a href="/products" class="mt-4 inline-block text-brand hover:underline text-sm">Mulai belanja</a>
+      </div>
+    ) : (
+      <div class="flex flex-col gap-4">
+        <!-- Items -->
+        <div class="flex flex-col gap-3" id="cart-list">
+          {cartItems.map((item: any) => (
+            <div class="flex gap-4 bg-surface border border-border rounded-2xl p-4 items-center" data-item-id={item.id}>
+              <div class="w-16 h-16 rounded-xl bg-surface-2 overflow-hidden shrink-0">
+                {item.image_url ? (
+                  <img src={item.image_url} alt={item.name} class="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div class="w-full h-full flex items-center justify-center text-border">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                  </div>
+                )}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold text-white text-sm truncate">{item.name}</p>
+                <p class="text-brand font-bold text-sm mt-0.5">{fmt(item.price)}</p>
+                {(!item.is_available || item.stock < 1) && (
+                  <p class="text-xs text-red-400 mt-0.5">Stok habis</p>
+                )}
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button
+                  class="qty-btn w-7 h-7 rounded-lg bg-surface-3 border border-border text-white text-sm hover:bg-surface-2 transition-colors flex items-center justify-center"
+                  data-action="dec" data-id={item.id}
+                >-</button>
+                <span class="qty-display w-6 text-center text-sm font-bold text-white">{item.quantity}</span>
+                <button
+                  class="qty-btn w-7 h-7 rounded-lg bg-surface-3 border border-border text-white text-sm hover:bg-surface-2 transition-colors flex items-center justify-center"
+                  data-action="inc" data-id={item.id} data-max={item.stock}
+                >+</button>
+                <button
+                  class="delete-btn ml-1 w-7 h-7 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors flex items-center justify-center"
+                  data-id={item.id}
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <!-- Summary -->
+        <div class="bg-surface border border-border rounded-2xl p-5">
+          <div class="flex justify-between mb-4">
+            <span class="text-muted">Total ({cartItems.length} item)</span>
+            <span id="total-display" class="text-white font-bold">{fmt(total)}</span>
+          </div>
+          <a href="/checkout" id="checkout-btn" class="block w-full py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors text-sm text-center">
+            Lanjut Pembayaran
+          </a>
+        </div>
+      </div>
+    )}
+  </div>
+
+  <script>
+    const fmt = (p: number) =>
+      new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
+
+    document.addEventListener('click', async (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('[data-action],[data-id]') as HTMLElement | null;
+      if (!btn) return;
+
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+
+      if (btn.classList.contains('delete-btn') && id) {
+        const row = document.querySelector(`[data-item-id="${id}"]`);
+        await fetch(`/api/cart/${id}`, { method: 'DELETE' });
+        row?.remove();
+        recalcTotal();
+      } else if (btn.classList.contains('qty-btn') && id) {
+        const row = document.querySelector(`[data-item-id="${id}"]`)!;
+        const qtyEl = row.querySelector('.qty-display')!;
+        let qty = parseInt(qtyEl.textContent ?? '1');
+        const max = parseInt((row.querySelector('[data-action="inc"]') as HTMLElement)?.dataset.max ?? '99');
+
+        if (action === 'inc') qty = Math.min(qty + 1, max);
+        if (action === 'dec') qty = Math.max(qty - 1, 1);
+
+        if (qty === 0) {
+          await fetch(`/api/cart/${id}`, { method: 'DELETE' });
+          row.remove();
+        } else {
+          await fetch(`/api/cart/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ quantity: qty }),
+          });
+          qtyEl.textContent = String(qty);
+        }
+        recalcTotal();
+      }
+    });
+
+    function recalcTotal() {
+      const rows = document.querySelectorAll('[data-item-id]');
+      let total = 0;
+      rows.forEach((row) => {
+        const priceText = row.querySelector('.text-brand')?.textContent ?? '0';
+        const qty = parseInt(row.querySelector('.qty-display')?.textContent ?? '1');
+        const price = parseInt(priceText.replace(/[^0-9]/g, ''));
+        total += price * qty;
+      });
+      const display = document.getElementById('total-display');
+      if (display) display.textContent = fmt(total);
+    }
+  </script>
+</Layout>

@@ -1,0 +1,109 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { sql } from '../../lib/db';
+
+const [stats, dailyData] = (await Promise.all([
+  sql`
+    SELECT
+      (SELECT COUNT(DISTINCT ip_hash)::int FROM visitor_logs WHERE created_at >= NOW() - INTERVAL '24 hours') AS today_visitors,
+      (SELECT COUNT(DISTINCT ip_hash)::int FROM visitor_logs WHERE created_at >= NOW() - INTERVAL '7 days') AS week_visitors,
+      (SELECT COUNT(*)::int FROM users WHERE role = 'customer' AND is_deleted = FALSE) AS total_customers,
+      (SELECT COUNT(*)::int FROM orders WHERE status = 'pending_approval') AS pending_orders,
+      (SELECT COALESCE(SUM(total_amount), 0)::bigint FROM orders WHERE status = 'approved') AS total_revenue,
+      (SELECT COUNT(*)::int FROM products WHERE is_available = TRUE) AS active_products
+  `.catch(() => [{}]),
+  sql`
+    SELECT DATE(created_at) AS date, COUNT(DISTINCT ip_hash)::int AS visitors
+    FROM visitor_logs
+    WHERE created_at >= NOW() - INTERVAL '14 days'
+    GROUP BY DATE(created_at) ORDER BY date ASC
+  `.catch(() => []),
+])) as [any[], any[]];
+
+const s = (stats[0] ?? {}) as any;
+const fmt = (p: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
+
+const recentOrders = (await sql`
+  SELECT o.id, o.total_amount, o.status, o.created_at, u.username
+  FROM orders o JOIN users u ON u.id = o.user_id
+  ORDER BY o.created_at DESC LIMIT 5
+`.catch(() => [])) as any[];
+
+// Chart data
+const maxVisitors = Math.max(...dailyData.map((d: any) => d.visitors as number), 1);
+---
+
+<AdminLayout title="Dashboard - PusatMLBB">
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    {[
+      { label: 'Pengunjung Hari Ini', value: s.today_visitors ?? 0, sub: `${s.week_visitors ?? 0} minggu ini`, color: 'text-brand' },
+      { label: 'Total Customer', value: s.total_customers ?? 0, sub: 'Aktif', color: 'text-blue-400' },
+      { label: 'Menunggu Konfirmasi', value: s.pending_orders ?? 0, sub: 'Perlu tindakan', color: 'text-yellow-400' },
+      { label: 'Produk Aktif', value: s.active_products ?? 0, sub: 'Tersedia', color: 'text-green-400' },
+      { label: 'Total Pendapatan', value: fmt(Number(s.total_revenue ?? 0)), sub: 'Dari order disetujui', color: 'text-brand', wide: true },
+    ].map((card) => (
+      <div class={`bg-surface border border-border rounded-2xl p-5 ${card.wide ? 'col-span-2 lg:col-span-1' : ''}`}>
+        <p class="text-xs text-muted mb-1">{card.label}</p>
+        <p class={`text-2xl font-black ${card.color}`}>{card.value}</p>
+        <p class="text-xs text-muted mt-0.5">{card.sub}</p>
+      </div>
+    ))}
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-6">
+    <!-- Visitor Chart -->
+    <div class="bg-surface border border-border rounded-2xl p-5">
+      <h2 class="font-semibold text-white mb-4 text-sm">Pengunjung 14 Hari Terakhir</h2>
+      {dailyData.length === 0 ? (
+        <p class="text-muted text-sm text-center py-8">Belum ada data.</p>
+      ) : (
+        <div class="flex items-end gap-1 h-32">
+          {dailyData.map((d: any) => {
+            const height = Math.max(4, Math.round((d.visitors / maxVisitors) * 100));
+            return (
+              <div class="flex-1 flex flex-col items-center gap-1 group">
+                <span class="text-[9px] text-muted opacity-0 group-hover:opacity-100 transition-opacity">{d.visitors}</span>
+                <div
+                  class="w-full bg-brand/40 hover:bg-brand rounded transition-colors"
+                  style={`height: ${height}%`}
+                  title={`${new Date(d.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}: ${d.visitors} pengunjung`}
+                ></div>
+                <span class="text-[8px] text-muted rotate-45 origin-left hidden sm:block">{new Date(d.date).getDate()}/{new Date(d.date).getMonth() + 1}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="bg-surface border border-border rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-semibold text-white text-sm">Pesanan Terbaru</h2>
+        <a href="/admin/orders" class="text-xs text-brand hover:underline">Lihat semua</a>
+      </div>
+      {recentOrders.length === 0 ? (
+        <p class="text-muted text-sm text-center py-8">Belum ada pesanan.</p>
+      ) : (
+        <div class="flex flex-col gap-2">
+          {recentOrders.map((o: any) => (
+            <div class="flex items-center justify-between py-2 border-b border-border last:border-0">
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-white truncate">{o.username}</p>
+                <p class="text-xs text-muted">{fmt(o.total_amount)}</p>
+              </div>
+              <span class={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+                o.status === 'approved' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                o.status === 'pending_approval' ? 'bg-brand/10 text-brand border-brand/20' :
+                o.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                'bg-surface-3 text-muted border-border'
+              }`}>{o.status}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</AdminLayout>

@@ -1,0 +1,96 @@
+---
+import Layout from '../layouts/Layout.astro';
+if (Astro.locals.user) return Astro.redirect('/');
+---
+<Layout title="Daftar - PusatMLBB" canonicalPath="/register">
+  <div class="min-h-[80vh] flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-sm">
+      <div class="text-center mb-8">
+        <a href="/" class="inline-block font-bold text-2xl mb-4">
+          <span class="text-brand">Pusat</span><span class="text-white">MLBB</span>
+        </a>
+        <h1 class="text-2xl font-black text-white">Buat akun baru</h1>
+        <p class="text-muted text-sm mt-1">Sudah punya akun? <a href="/login" class="text-brand hover:underline">Masuk</a></p>
+      </div>
+
+      <div id="error-msg" class="hidden mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center"></div>
+      <div id="success-msg" class="hidden mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm text-center"></div>
+
+      <form id="register-form" class="flex flex-col gap-4">
+        <div>
+          <label class="block text-sm font-medium text-white mb-1.5">Email</label>
+          <input
+            type="email" name="email" required autocomplete="email"
+            placeholder="email@example.com"
+            class="w-full bg-surface-2 border border-border rounded-xl px-4 py-3 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/30 transition-colors"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-white mb-1.5">Username</label>
+          <input
+            type="text" name="username" required autocomplete="username"
+            placeholder="username (hanya huruf, angka, underscore)"
+            class="w-full bg-surface-2 border border-border rounded-xl px-4 py-3 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/30 transition-colors"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-white mb-1.5">Password</label>
+          <input
+            type="password" name="password" required autocomplete="new-password"
+            placeholder="Minimal 8 karakter"
+            class="w-full bg-surface-2 border border-border rounded-xl px-4 py-3 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/30 transition-colors"
+          />
+        </div>
+        <button
+          type="submit" id="submit-btn"
+          class="w-full py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          Daftar Sekarang
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('register-form') as HTMLFormElement;
+    const btn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const errorMsg = document.getElementById('error-msg')!;
+    const successMsg = document.getElementById('success-msg')!;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+      btn.textContent = 'Mendaftar...';
+      errorMsg.classList.add('hidden');
+      successMsg.classList.add('hidden');
+
+      const fd = new FormData(form);
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: fd.get('email'),
+            username: fd.get('username'),
+            password: fd.get('password'),
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          successMsg.textContent = 'Pendaftaran berhasil! Mengalihkan...';
+          successMsg.classList.remove('hidden');
+          setTimeout(() => (window.location.href = '/'), 1200);
+        } else {
+          errorMsg.textContent = data.error || 'Gagal mendaftar';
+          errorMsg.classList.remove('hidden');
+        }
+      } catch {
+        errorMsg.textContent = 'Terjadi kesalahan. Coba lagi.';
+        errorMsg.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Daftar Sekarang';
+      }
+    });
+  </script>
+</Layout>

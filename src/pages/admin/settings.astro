@@ -1,0 +1,209 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { sql } from '../../lib/db';
+
+const qris = await sql`SELECT image_url, updated_at FROM qris_settings WHERE id = 1`.catch(() => []);
+const qrisUrl = qris[0]?.image_url ?? null;
+const updatedAt = qris[0]?.updated_at ?? null;
+
+const siteSettings = await sql`SELECT bypass_link, tutorial_video_url FROM qris_settings WHERE id = 1`.catch(() => []);
+const bypassLink: string = siteSettings[0]?.bypass_link ?? '';
+const tutorialUrl: string = siteSettings[0]?.tutorial_video_url ?? '';
+---
+
+<AdminLayout title="Pengaturan - PusatMLBB">
+  <div class="max-w-lg">
+    <div class="bg-surface border border-border rounded-2xl p-6">
+      <h2 class="font-bold text-white mb-1">Foto QRIS Pembayaran</h2>
+      <p class="text-muted text-xs mb-5">
+        Upload foto QRIS yang akan ditampilkan ke customer saat checkout.
+        {updatedAt && <span> Terakhir diupdate: {new Date(updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
+      </p>
+
+      <!-- Current QRIS -->
+      {qrisUrl ? (
+        <div class="mb-5 flex flex-col items-center">
+          <p class="text-xs text-muted mb-2">QRIS Saat Ini:</p>
+          <div class="bg-white p-3 rounded-xl inline-block">
+            <img src={qrisUrl} alt="QRIS PusatMLBB" class="w-48 h-48 object-contain" />
+          </div>
+        </div>
+      ) : (
+        <div class="mb-5 p-4 bg-surface-2 border border-dashed border-border rounded-xl text-center text-muted text-sm">
+          Belum ada QRIS yang diupload
+        </div>
+      )}
+
+      <!-- Upload Form -->
+      <div id="error-msg" class="hidden mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"></div>
+      <div id="success-msg" class="hidden mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm"></div>
+
+      <div class="mb-4">
+        <label class="block text-xs font-medium text-white mb-2">Upload QRIS Baru</label>
+        <input
+          type="file" id="qris-file" accept="image/jpeg,image/png,image/webp"
+          class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-muted text-sm file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-brand/10 file:text-brand file:text-xs file:font-medium cursor-pointer"
+        />
+        <div id="qris-preview-container" class="hidden mt-3 flex justify-center">
+          <div class="bg-white p-2 rounded-lg inline-block">
+            <img id="qris-preview" src="" alt="Preview QRIS" class="w-40 h-40 object-contain" />
+          </div>
+        </div>
+      </div>
+
+      <button
+        id="upload-btn"
+        class="w-full py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        Upload QRIS Baru
+      </button>
+    </div>
+
+    <!-- Bypass & Tutorial Settings -->
+    <div class="bg-surface border border-border rounded-2xl p-6 mt-6">
+      <h2 class="font-bold text-white mb-1">Link Bypass & Video Tutorial</h2>
+      <p class="text-muted text-xs mb-5">
+        Link download bypass dan video tutorial hanya muncul di profil customer yang sudah memiliki minimal 1 transaksi disetujui.
+      </p>
+
+      <div id="settings-error" class="hidden mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"></div>
+      <div id="settings-success" class="hidden mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm"></div>
+
+      <div class="flex flex-col gap-4">
+        <!-- Bypass Link -->
+        <div>
+          <label class="block text-xs font-medium text-white mb-1.5">
+            Link Download Bypass
+          </label>
+          <div class="flex items-center gap-2 bg-brand/5 border border-brand/20 rounded-xl px-3 py-2 mb-2">
+            <svg class="w-4 h-4 text-brand shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            <span class="text-xs text-muted">Link langsung ke file (MediaFire, Google Drive, dll.)</span>
+          </div>
+          <input
+            type="url" id="bypass-link" value={bypassLink}
+            placeholder="https://mediafire.com/file/..."
+            class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors"
+          />
+        </div>
+
+        <!-- Tutorial Video URL -->
+        <div>
+          <label class="block text-xs font-medium text-white mb-1.5">
+            Link Video Tutorial (Google Drive)
+          </label>
+          <div class="flex items-center gap-2 bg-brand/5 border border-brand/20 rounded-xl px-3 py-2 mb-2">
+            <svg class="w-4 h-4 text-brand shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            <span class="text-xs text-muted">Pakai link share Google Drive (bukan embed)</span>
+          </div>
+          <input
+            type="url" id="tutorial-url" value={tutorialUrl}
+            placeholder="https://drive.google.com/file/d/..."
+            class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors"
+          />
+        </div>
+
+        <button
+          id="save-settings-btn"
+          class="py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60"
+        >
+          Simpan Pengaturan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('qris-file') as HTMLInputElement;
+    const previewContainer = document.getElementById('qris-preview-container')!;
+    const previewImg = document.getElementById('qris-preview') as HTMLImageElement;
+    const uploadBtn = document.getElementById('upload-btn') as HTMLButtonElement;
+    const errorMsg = document.getElementById('error-msg')!;
+    const successMsg = document.getElementById('success-msg')!;
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (file) {
+        previewImg.src = URL.createObjectURL(file);
+        previewContainer.classList.remove('hidden');
+      }
+    });
+
+    uploadBtn.addEventListener('click', async () => {
+      const file = fileInput.files?.[0];
+      if (!file) {
+        errorMsg.textContent = 'Pilih file QRIS terlebih dahulu';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Mengupload...';
+      errorMsg.classList.add('hidden');
+      successMsg.classList.add('hidden');
+
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+
+        const res = await fetch('/api/admin/qris', { method: 'PUT', body: fd });
+        const data = await res.json();
+
+        if (res.ok) {
+          successMsg.textContent = 'QRIS berhasil diupdate!';
+          successMsg.classList.remove('hidden');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          errorMsg.textContent = data.error || 'Gagal mengupload QRIS';
+          errorMsg.classList.remove('hidden');
+        }
+      } catch {
+        errorMsg.textContent = 'Terjadi kesalahan. Coba lagi.';
+        errorMsg.classList.remove('hidden');
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload QRIS Baru';
+      }
+    });
+
+    // Save bypass & tutorial settings
+    const saveBtn = document.getElementById('save-settings-btn') as HTMLButtonElement;
+    const settingsError = document.getElementById('settings-error')!;
+    const settingsSuccess = document.getElementById('settings-success')!;
+
+    saveBtn.addEventListener('click', async () => {
+      settingsError.classList.add('hidden');
+      settingsSuccess.classList.add('hidden');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Menyimpan...';
+
+      const bypassLink = (document.getElementById('bypass-link') as HTMLInputElement).value.trim();
+      const tutorialUrl = (document.getElementById('tutorial-url') as HTMLInputElement).value.trim();
+
+      try {
+        const res = await fetch('/api/admin/site-settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bypass_link: bypassLink, tutorial_video_url: tutorialUrl }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          settingsSuccess.textContent = 'Pengaturan berhasil disimpan!';
+          settingsSuccess.classList.remove('hidden');
+        } else {
+          settingsError.textContent = data.error || 'Gagal menyimpan';
+          settingsError.classList.remove('hidden');
+        }
+      } catch {
+        settingsError.textContent = 'Terjadi kesalahan. Coba lagi.';
+        settingsError.classList.remove('hidden');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Simpan Pengaturan';
+      }
+    });
+  </script>
+</AdminLayout>

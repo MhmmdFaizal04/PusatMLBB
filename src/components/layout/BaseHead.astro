@@ -1,0 +1,57 @@
+---
+export interface Props {
+  title?: string;
+  description?: string;
+  keywords?: string;
+  image?: string;
+  canonicalPath?: string;
+  type?: 'website' | 'product';
+}
+
+const {
+  title = 'PusatMLBB - Jual Cheat Mobile Legends Anti Banned Terpercaya',
+  description = 'Jual cheat Mobile Legends anti-banned terpercaya. Harga murah, aman, update otomatis setiap patch. Proses cepat, pembayaran QRIS.',
+  keywords = 'jual cheat mobile legends, cheat ml terbaru, cheat ml anti banned, cheat mobile legends aman, cheat ml murah, script cheat ml, pusat cheat ml, beli cheat ml, cheat ml 2026, cheat ml update, mobile legends hack, cheat ml termurah, cheat ml terpercaya, pusatmlbb',
+  image = '/og-image.svg',
+  canonicalPath = '',
+  type = 'website',
+} = Astro.props;
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://pusatmlbb.vercel.app';
+const canonical = `${siteUrl}${canonicalPath}`;
+const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
+const googleVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0A0A0A" />
+<meta name="robots" content="index, follow" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="keywords" content={keywords} />
+<link rel="canonical" href={canonical} />
+
+<!-- Open Graph -->
+<meta property="og:type" content={type} />
+<meta property="og:url" content={canonical} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:site_name" content="PusatMLBB" />
+<meta property="og:locale" content="id_ID" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+
+<!-- Google Search Console -->
+{googleVerification && (
+  <meta name="google-site-verification" content={googleVerification} />
+)}
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/favicon.svg" />
+<link rel="sitemap" href="/sitemap.xml" />

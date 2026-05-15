@@ -1,0 +1,72 @@
+---
+import BaseHead from '../components/layout/BaseHead.astro';
+import Navbar from '../components/layout/Navbar.astro';
+import Footer from '../components/layout/Footer.astro';
+import BottomNav from '../components/layout/BottomNav';
+import '../styles/global.css';
+
+export interface Props {
+  title?: string;
+  description?: string;
+  keywords?: string;
+  image?: string;
+  canonicalPath?: string;
+  type?: 'website' | 'product';
+  bodyClass?: string;
+}
+
+const { bodyClass = '', ...headProps } = Astro.props;
+const user = Astro.locals.user;
+
+// Cart count for navbar badge (server-side)
+let cartCount = 0;
+if (user) {
+  try {
+    const { sql } = await import('../lib/db');
+    const rows = await sql`
+      SELECT COALESCE(SUM(quantity), 0)::int AS count
+      FROM cart_items WHERE user_id = ${user.userId}
+    `;
+    cartCount = rows[0]?.count ?? 0;
+  } catch {
+    cartCount = 0;
+  }
+}
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <BaseHead {...headProps} />
+    <!-- JSON-LD WebSite schema -->
+    <script type="application/ld+json" is:inline>
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "PusatMLBB",
+        "url": "https://pusatmlbb.vercel.app",
+        "description": "Jual cheat Mobile Legends anti-banned terpercaya, harga murah, update otomatis",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://pusatmlbb.vercel.app/products?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+  </head>
+  <body class={`bg-bg text-white min-h-dvh flex flex-col ${bodyClass}`}>
+    <Navbar user={user} cartCount={cartCount} />
+    <main class="flex-1 pb-20 md:pb-0">
+      <slot />
+    </main>
+    <Footer />
+    <!-- Mobile bottom nav -->
+    <BottomNav
+      client:load
+      isLoggedIn={!!user}
+      role={user?.role}
+      cartCount={cartCount}
+      currentPath={new URL(Astro.request.url).pathname}
+    />
+  </body>
+</html>

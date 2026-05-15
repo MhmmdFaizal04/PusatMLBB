@@ -1,0 +1,103 @@
+---
+export interface Props {
+  user?: { username: string; role: string } | null;
+  cartCount?: number;
+}
+const { user, cartCount = 0 } = Astro.props;
+const path = new URL(Astro.request.url).pathname;
+
+const navLinks = [
+  { href: '/', label: 'Beranda' },
+  { href: '/products', label: 'Produk' },
+];
+---
+
+<header class="hidden md:block sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-border">
+  <nav class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-6">
+    <!-- Logo -->
+    <a href="/" class="flex items-center gap-2 font-bold text-xl shrink-0">
+      <span class="text-brand">Pusat</span><span class="text-white">MLBB</span>
+    </a>
+
+    <!-- Nav links -->
+    <div class="flex items-center gap-1">
+      {navLinks.map((link) => (
+        <a
+          href={link.href}
+          class={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            path === link.href
+              ? 'bg-brand/10 text-brand'
+              : 'text-muted hover:text-white hover:bg-surface-3'
+          }`}
+        >
+          {link.label}
+        </a>
+      ))}
+    </div>
+
+    <!-- Right side -->
+    <div class="flex items-center gap-3">
+      {user ? (
+        <>
+          {/* Cart */}
+          <a href="/cart" class="relative p-2 text-muted hover:text-white transition-colors" aria-label="Keranjang">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            {cartCount > 0 && (
+              <span class="absolute -top-0.5 -right-0.5 bg-brand text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {cartCount > 9 ? '9+' : cartCount}
+              </span>
+            )}
+          </a>
+
+          {/* User dropdown */}
+          <div class="relative group">
+            <button class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-surface-3 transition-colors">
+              <span class="w-7 h-7 rounded-full bg-brand/20 text-brand flex items-center justify-center font-bold text-xs uppercase">
+                {user.username.charAt(0)}
+              </span>
+              <span class="max-w-24 truncate">{user.username}</span>
+              <svg class="w-3.5 h-3.5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div class="absolute right-0 top-full mt-1 w-44 bg-surface-2 border border-border rounded-xl shadow-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+              {user.role === 'admin' && (
+                <a href="/admin" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-white hover:bg-surface-3 transition-colors">
+                  Dashboard Admin
+                </a>
+              )}
+              <a href="/orders" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-white hover:bg-surface-3 transition-colors">
+                Pesanan Saya
+              </a>
+              <a href="/files" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-white hover:bg-surface-3 transition-colors">
+                File Saya
+              </a>
+              <a href="/profile" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-white hover:bg-surface-3 transition-colors">
+                Profil
+              </a>
+              <div class="border-t border-border my-1"></div>
+              <button
+                onclick="fetch('/api/auth/logout',{method:'POST'}).then(()=>location.href='/')"
+                class="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-surface-3 transition-colors"
+              >
+                Keluar
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <a href="/login" class="px-4 py-2 text-sm font-medium text-muted hover:text-white transition-colors">
+            Masuk
+          </a>
+          <a href="/register" class="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-lg transition-colors">
+            Daftar
+          </a>
+        </>
+      )}
+    </div>
+  </nav>
+</header>
