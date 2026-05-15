@@ -32,6 +32,24 @@ const recentOrders = (await sql`
 
 // Chart data
 const maxVisitors = Math.max(...dailyData.map((d: any) => d.visitors as number), 1);
+
+// SVG line chart calculations (viewBox 300x100, chart area: left=24, right=8, top=8, bottom=24)
+const svgW = 300, svgH = 100;
+const padL = 24, padR = 8, padT = 8, padB = 24;
+const chartW = svgW - padL - padR;
+const chartH = svgH - padT - padB;
+const n = dailyData.length;
+const points = dailyData.map((d: any, i: number) => {
+  const x = padL + (n <= 1 ? chartW / 2 : (i / (n - 1)) * chartW);
+  const y = padT + chartH - Math.max(0, (d.visitors / maxVisitors)) * chartH;
+  return { x, y, d };
+});
+const polyline = points.map((p: any) => `${p.x},${p.y}`).join(' ');
+const fillPath = points.length > 0
+  ? `M${points[0].x},${padT + chartH} ` +
+    points.map((p: any) => `L${p.x},${p.y}`).join(' ') +
+    ` L${points[points.length - 1].x},${padT + chartH} Z`
+  : '';
 ---
 
 <AdminLayout title="Dashboard - PusatMLBB">
@@ -59,37 +77,58 @@ const maxVisitors = Math.max(...dailyData.map((d: any) => d.visitors as number),
       {dailyData.length === 0 ? (
         <p class="text-muted text-sm text-center py-8">Belum ada data.</p>
       ) : (
-        <div class="flex flex-col gap-2">
-          <!-- Bars -->
-          <div class="flex items-end gap-1" style="height: 120px">
-            {dailyData.map((d: any) => {
-              const pxHeight = Math.max(4, Math.round((d.visitors / maxVisitors) * 112));
-              const label = new Date(d.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-              return (
-                <div class="flex-1 flex flex-col items-center justify-end h-full group relative">
-                  <span class="absolute -top-5 text-[9px] text-white bg-surface-2 px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                    {d.visitors}
-                  </span>
-                  <div
-                    class="w-full bg-brand/40 hover:bg-brand rounded-sm transition-colors cursor-default"
-                    style={`height: ${pxHeight}px`}
-                    title={`${label}: ${d.visitors} pengunjung`}
-                  ></div>
-                </div>
-              );
-            })}
-          </div>
-          <!-- X-axis labels -->
-          <div class="flex gap-1">
-            {dailyData.map((d: any) => (
-              <div class="flex-1 text-center">
-                <span class="text-[8px] text-muted leading-none">
-                  {new Date(d.date).getDate()}/{new Date(d.date).getMonth() + 1}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <svg viewBox={`0 0 ${svgW} ${svgH}`} class="w-full" style="height: 140px" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#F97316" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#F97316" stop-opacity="0.02"/>
+            </linearGradient>
+          </defs>
+
+          {/* Grid lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map((t) => {
+            const y = padT + t * chartH;
+            const val = Math.round(maxVisitors * (1 - t));
+            return (
+              <>
+                <line x1={padL} y1={y} x2={svgW - padR} y2={y} stroke="#2A2A2A" stroke-width="0.5" />
+                <text x={padL - 3} y={y + 3} text-anchor="end" font-size="5" fill="#666">{val}</text>
+              </>
+            );
+          })}
+
+          {/* Area fill */}
+          <path d={fillPath} fill="url(#chartFill)" />
+
+          {/* Line */}
+          <polyline
+            points={polyline}
+            fill="none"
+            stroke="#F97316"
+            stroke-width="1.5"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+
+          {/* Dots + labels */}
+          {points.map((p: any, i: number) => (
+            <>
+              <circle cx={p.x} cy={p.y} r="2" fill="#F97316" stroke="#0A0A0A" stroke-width="1" />
+              {/* Show date label every ~2 points to avoid overlap */}
+              {(i === 0 || i === n - 1 || i % 2 === 0) && (
+                <text
+                  x={p.x}
+                  y={svgH - 2}
+                  text-anchor="middle"
+                  font-size="5"
+                  fill="#666"
+                >
+                  {new Date(p.d.date).getDate()}/{new Date(p.d.date).getMonth() + 1}
+                </text>
+              )}
+            </>
+          ))}
+        </svg>
       )}
     </div>
 
