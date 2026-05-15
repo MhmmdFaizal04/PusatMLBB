@@ -13,4 +13,4 @@ Disallow: /orders
 Disallow: /files
 Disallow: /profile
 
-Sitemap: https://pusatmlbb.vercel.app/sitemap.xml
+Sitemap: https://pusat-mlbb.vercel.app/sitemap.xml

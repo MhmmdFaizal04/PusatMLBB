@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { sql } from '../lib/db';
 
 export const GET: APIRoute = async () => {
-  const site = import.meta.env.PUBLIC_SITE_URL || 'https://pusatmlbb.vercel.app';
+  const site = import.meta.env.PUBLIC_SITE_URL || 'https://pusat-mlbb.vercel.app';
 
   const products = await sql`SELECT id, updated_at FROM products WHERE is_available = TRUE`
     .catch(() => []);

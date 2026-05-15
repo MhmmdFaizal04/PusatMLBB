@@ -17,7 +17,7 @@ const {
   type = 'website',
 } = Astro.props;
 
-const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://pusatmlbb.vercel.app';
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://pusat-mlbb.vercel.app';
 const canonical = `${siteUrl}${canonicalPath}`;
 const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
 const googleVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;

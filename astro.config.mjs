@@ -7,7 +7,7 @@ import vercel from '@astrojs/vercel';
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
-  site: process.env.PUBLIC_SITE_URL || 'https://pusatmlbb.vercel.app',
+  site: process.env.PUBLIC_SITE_URL || 'https://pusat-mlbb.vercel.app',
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
