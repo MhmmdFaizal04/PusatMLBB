@@ -1,0 +1,748 @@
+﻿---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Draft Hoki - Cheat Rank Booster Mobile Legends | Download APK Gratis"
+  description="Download Draft Hoki, cheat rank booster Mobile Legends terpercaya. Push rank otomatis dari Warrior ke Mythic, anti banned, gratis selamanya."
+  canonicalPath="/draft-hoki"
+>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PARTICLE CANVAS BACKGROUND
+═══════════════════════════════════════════════════════════════ -->
+<canvas id="dh-particles" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MARQUEE TICKER
+═══════════════════════════════════════════════════════════════ -->
+<div class="relative overflow-hidden bg-brand/10 border-b border-brand/20 py-2 z-10">
+  <div id="dh-ticker" class="flex gap-8 whitespace-nowrap text-xs font-semibold text-brand">
+    {Array(3).fill(null).map(() => (
+      <span class="flex items-center gap-6 shrink-0">
+        <span>Cheat Rank Booster #1 MLBB</span>
+        <span>•</span>
+        <span>Win Rate +24%</span>
+        <span>•</span>
+        <span>10.000+ Download</span>
+        <span>•</span>
+        <span>100% Anti Banned</span>
+        <span>•</span>
+        <span>Gratis Selamanya</span>
+        <span>•</span>
+        <span>Rating 4.9/5.0</span>
+        <span>•</span>
+      </span>
+    ))}
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HERO SECTION
+═══════════════════════════════════════════════════════════════ -->
+<section id="dh-hero" class="relative overflow-hidden min-h-screen flex items-center z-10">
+  <!-- Animated gradient mesh -->
+  <div class="absolute inset-0 pointer-events-none">
+    <div class="dh-mesh-1 absolute top-0 left-0 w-[600px] h-[600px] bg-brand/8 rounded-full blur-[120px]"></div>
+    <div class="dh-mesh-2 absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-600/8 rounded-full blur-[100px]"></div>
+    <div class="dh-mesh-3 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-brand/5 rounded-full blur-[80px]"></div>
+  </div>
+  <!-- SVG Grid lines bg -->
+  <svg class="absolute inset-0 w-full h-full opacity-[0.03] pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+        <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#F97316" stroke-width="1"/>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#grid)" />
+  </svg>
+
+  <div class="max-w-7xl mx-auto px-4 py-20 md:py-28 w-full relative z-10">
+    <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+
+      <!-- Left: Text -->
+      <div class="flex-1 text-center lg:text-left flex flex-col items-center lg:items-start gap-6">
+        <!-- Animated badge -->
+        <div id="dh-badge" class="inline-flex items-center gap-2 text-xs font-bold bg-brand/10 text-brand px-4 py-2 rounded-full border border-brand/30">
+          <svg id="dh-lightning" class="w-4 h-4" viewBox="0 0 24 24" fill="none">
+            <path id="dh-lightning-path" d="M13 10V3L4 14h7v7l9-11h-7z"
+              stroke="#F97316" stroke-width="2" stroke-linejoin="round"
+              fill="none" stroke-dasharray="60" stroke-dashoffset="60"/>
+          </svg>
+          Cheat Rank Booster #1 Mobile Legends
+        </div>
+        <!-- Split-line animated title -->
+        <h1 id="dh-title" class="text-4xl md:text-6xl lg:text-7xl font-black leading-tight tracking-tight">
+          <span class="block overflow-hidden"><span class="dh-title-inner block">Draft Hoki</span></span>
+          <span class="block overflow-hidden"><span class="dh-title-inner block text-brand">Cheat Rank</span></span>
+          <span class="block overflow-hidden">
+            <span class="dh-title-inner block">
+              <span id="dh-typewriter" class="text-brand"></span><span id="dh-cursor" class="text-brand">|</span>
+            </span>
+          </span>
+        </h1>
+        <p id="dh-desc" class="text-muted text-base md:text-lg max-w-xl leading-relaxed">
+          Cheat rank booster Mobile Legends terpercaya. Boost rank otomatis, anti banned, proses cepat — dari Warrior langsung tembus Mythic.
+        </p>
+        <!-- Animated stat counters -->
+        <div id="dh-stats" class="flex items-center gap-10 flex-wrap justify-center lg:justify-start">
+          <div class="text-center lg:text-left">
+            <p class="font-black text-white text-3xl"><span class="dh-counter" data-target="10">0</span>K+</p>
+            <p class="text-muted text-xs mt-0.5">Download</p>
+          </div>
+          <div class="w-px h-10 bg-border"></div>
+          <div class="text-center lg:text-left">
+            <p class="font-black text-white text-3xl"><span class="dh-counter-decimal" data-target="4.9">0</span>★</p>
+            <p class="text-muted text-xs mt-0.5">Rating</p>
+          </div>
+          <div class="w-px h-10 bg-border"></div>
+          <div class="text-center lg:text-left">
+            <p class="font-black text-white text-3xl"><span class="dh-counter" data-target="24">0</span>%</p>
+            <p class="text-muted text-xs mt-0.5">Win Rate Boost</p>
+          </div>
+        </div>
+        <!-- Magnetic CTA buttons -->
+        <div id="dh-cta" class="flex flex-wrap gap-3 justify-center lg:justify-start">
+          <a href="#download" class="dh-magnetic inline-flex items-center gap-2 px-7 py-3.5 bg-brand text-white font-bold rounded-2xl text-sm shadow-lg shadow-brand/25 relative overflow-hidden group">
+            <span class="dh-magnetic-inner relative z-10 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 16l-4-4h3V4h2v8h3l-4 4zm-7 2h14v2H5v-2z"/></svg>
+              Download APK Gratis
+            </span>
+            <span class="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></span>
+          </a>
+          <a href="#preview" class="dh-magnetic inline-flex items-center gap-2 px-7 py-3.5 border border-border hover:border-brand/40 text-white font-semibold rounded-2xl text-sm transition-colors">
+            <span class="dh-magnetic-inner flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Lihat Preview
+            </span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Right: Phone Mockup with 3D tilt -->
+      <div id="dh-mockup" class="flex-1 flex justify-center lg:justify-end relative">
+        <div id="dh-phone-wrapper" class="relative w-64 md:w-72" style="perspective: 1000px;">
+          <div id="dh-phone-3d" class="relative" style="transform-style: preserve-3d;">
+            <!-- Glow ring -->
+            <div class="absolute inset-0 rounded-[2.5rem] bg-brand/20 blur-2xl scale-110 dh-phone-glow"></div>
+            <!-- Phone frame -->
+            <div class="relative bg-surface-2 border-2 border-border rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/60 dh-phone">
+              <!-- Status bar -->
+              <div class="absolute top-0 left-0 right-0 h-8 bg-surface-3/80 backdrop-blur-sm z-10 flex items-center justify-between px-4 text-[9px] text-muted font-medium">
+                <span>9:41</span>
+                <div class="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-4 bg-surface-3 rounded-b-xl"></div>
+                <div class="flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+                </div>
+              </div>
+              <!-- App content -->
+              <div class="aspect-[9/19.5] bg-gradient-to-b from-[#0f0f1a] to-[#0a0a14] flex flex-col pt-10">
+                <div class="px-4 py-3 border-b border-white/5">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-brand/20 border border-brand/30 flex items-center justify-center">
+                      <svg class="w-3.5 h-3.5 text-brand" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <span class="text-white text-xs font-black">Draft Hoki</span>
+                    <span class="ml-auto text-[9px] text-brand font-bold bg-brand/10 px-1.5 py-0.5 rounded-full border border-brand/20">LIVE</span>
+                  </div>
+                </div>
+                <div class="flex-1 p-3 space-y-2 overflow-hidden">
+                  <p class="text-[9px] text-muted font-semibold uppercase tracking-wide">Rank Boost Status</p>
+                  {[
+                    {name:'Push Rank', role:'Warrior → Epic', wr:'Active', tier:'ON', color:'#F97316'},
+                    {name:'Anti Detect', role:'Bypass System', wr:'Safe', tier:'OK', color:'#10B981'},
+                    {name:'Auto Win', role:'Match Boost', wr:'Run', tier:'GO', color:'#A855F7'},
+                  ].map((h) => (
+                    <div class="dh-phone-card flex items-center gap-2 bg-white/5 border border-white/8 rounded-lg px-2.5 py-2">
+                      <div class="w-7 h-7 rounded-md shrink-0" style={`background: ${h.color}20; border: 1px solid ${h.color}40`}></div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-white text-[10px] font-bold truncate">{h.name}</p>
+                        <p class="text-muted text-[8px]">{h.role}</p>
+                      </div>
+                      <span class="text-[9px] font-black px-1.5 py-0.5 rounded-md" style={`color: ${h.color}; background: ${h.color}20`}>{h.tier}</span>
+                      <span class="text-[9px] text-green-400 font-bold">{h.wr}</span>
+                    </div>
+                  ))}
+                  <div class="mt-3 bg-white/5 rounded-lg p-2.5 border border-white/8">
+                    <p class="text-[9px] text-muted mb-1.5">Progress Boost</p>
+                    <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div id="dh-phone-bar" class="h-full bg-gradient-to-r from-brand to-orange-400 rounded-full" style="width:0%"></div>
+                    </div>
+                    <p class="text-right text-[9px] text-brand font-black mt-1">74%</p>
+                  </div>
+                </div>
+                <div class="flex items-center justify-around py-2 border-t border-white/5 bg-black/20">
+                  {['Home','Boost','Stats','Akun'].map((label, i) => (
+                    <button class={`text-[9px] font-semibold px-2 py-1 rounded-lg ${i === 0 ? 'bg-brand/20 text-brand' : 'text-muted'}`}>{label}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <!-- Floating badges -->
+            <div class="absolute -left-8 top-1/4 bg-surface border border-border rounded-xl px-3 py-2.5 shadow-xl dh-float-badge backdrop-blur-sm">
+              <p class="text-[10px] font-semibold text-muted">Win Rate</p>
+              <p class="text-brand font-black text-xl leading-none">+24%</p>
+            </div>
+            <div class="absolute -right-8 top-1/2 bg-surface border border-border rounded-xl px-3 py-2.5 shadow-xl dh-float-badge backdrop-blur-sm">
+              <p class="text-[10px] font-semibold text-muted">Rank</p>
+              <p class="text-purple-400 font-black text-xl leading-none">Mythic</p>
+            </div>
+            <div class="absolute -left-4 bottom-1/4 bg-surface border border-border rounded-xl px-3 py-2.5 shadow-xl dh-float-badge backdrop-blur-sm">
+              <p class="text-[10px] font-semibold text-muted">Heroes</p>
+              <p class="text-blue-400 font-black text-xl leading-none">120+</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div id="dh-scroll-hint" class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+    <p class="text-muted text-xs">Scroll untuk lihat lebih</p>
+    <div class="w-6 h-10 border-2 border-border rounded-full flex items-start justify-center pt-1.5">
+      <div id="dh-scroll-dot" class="w-1.5 h-1.5 bg-brand rounded-full"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     RANK PROGRESSION
+═══════════════════════════════════════════════════════════════ -->
+<section id="dh-rank-section" class="border-t border-border bg-surface overflow-hidden">
+  <div class="max-w-7xl mx-auto px-4 py-16">
+    <div class="text-center mb-12">
+      <h2 class="dh-section-title text-2xl md:text-3xl font-black text-white mb-3">Dari <span class="text-orange-400">Warrior</span> ke <span class="text-purple-400">Mythic</span></h2>
+      <p class="dh-section-sub text-muted text-sm md:text-base max-w-lg mx-auto">Draft Hoki cheat rank booster membantu kamu naik rank step by step, cepat dan aman.</p>
+    </div>
+    <div class="flex items-center justify-center gap-2 md:gap-4 flex-wrap">
+      {[
+        {rank:'Warrior', color:'#A0AEC0', abbr:'W'},
+        {rank:'Elite', color:'#68D391', abbr:'E'},
+        {rank:'Master', color:'#63B3ED', abbr:'M'},
+        {rank:'Grandmaster', color:'#9F7AEA', abbr:'GM'},
+        {rank:'Epic', color:'#F6AD55', abbr:'EP'},
+        {rank:'Legend', color:'#FC8181', abbr:'L'},
+        {rank:'Mythic', color:'#A855F7', abbr:'MY'},
+      ].map((r, i) => (
+        <div class="dh-rank-item flex flex-col items-center gap-2">
+          <div class="dh-rank-badge w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center border-2 relative"
+               style={`border-color: ${r.color}40; background: ${r.color}15`}>
+            <span class="text-xs font-black" style={`color: ${r.color}`}>{r.abbr}</span>
+            {i < 6 && (
+              <div class="dh-rank-arrow absolute -right-3 md:-right-4 top-1/2 -translate-y-1/2 text-border text-xs z-10">›</div>
+            )}
+          </div>
+          <span class="text-[9px] font-bold" style={`color: ${r.color}`}>{r.rank}</span>
+        </div>
+      ))}
+    </div>
+    <div class="max-w-2xl mx-auto mt-8">
+      <div class="relative h-2 bg-surface-3 rounded-full border border-border overflow-hidden">
+        <div id="dh-rank-bar" class="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-orange-700 via-yellow-400 via-teal-400 via-blue-400 to-purple-500" style="width: 0%"></div>
+      </div>
+      <div class="flex justify-between text-[10px] text-muted mt-1.5">
+        <span>Warrior</span>
+        <span class="text-purple-400 font-bold">Mythic Glory</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FEATURES
+═══════════════════════════════════════════════════════════════ -->
+<section id="dh-features" class="max-w-7xl mx-auto px-4 py-16 md:py-20">
+  <div class="text-center mb-12">
+    <h2 class="dh-section-title text-2xl md:text-3xl font-black text-white mb-3">Kenapa Draft Hoki?</h2>
+    <p class="dh-section-sub text-muted max-w-xl mx-auto text-sm md:text-base">Fitur lengkap cheat rank booster yang terbukti efektif untuk push rank lebih cepat dan aman.</p>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    {[
+      {title:'Boost Rank Otomatis',desc:'Sistem cheat boost rank bekerja otomatis di background, push rank kamu tanpa perlu skill tinggi.',stat:'Auto',statLabel:'Boost Mode',
+        svg:'<path d="M13 10V3L4 14h7v7l9-11h-7z"/>'},
+      {title:'Anti Banned System',desc:'Teknologi bypass terbaru, 100% tidak terdeteksi sistem anti-cheat Mobile Legends. Aman dipakai setiap hari.',stat:'0%',statLabel:'Ban Rate',
+        svg:'<path fill-rule="evenodd" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" clip-rule="evenodd"/>'},
+      {title:'Semua Rank Didukung',desc:'Dari Warrior sampai Mythic Glory, semua rank bisa diboost. Pilih target rank kamu dan biarkan aplikasi bekerja.',stat:'All',statLabel:'Rank Support',
+        svg:'<path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>'},
+      {title:'Update Tiap Patch',desc:'Script dan bypass diperbarui otomatis setiap ada patch ML baru, jadi selalu bisa dipakai tanpa gangguan.',stat:'24h',statLabel:'Update Cycle',
+        svg:'<path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>'},
+      {title:'Proses Cepat',desc:'Naik rank dalam hitungan jam, bukan hari. Sistem kami dioptimasi untuk kecepatan boost maksimal.',stat:'Cepat',statLabel:'Proses',
+        svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>'},
+      {title:'Gratis Selamanya',desc:'Download gratis, tidak ada biaya langganan tersembunyi. Semua fitur cheat boost bisa dinikmati gratis.',stat:'Free',statLabel:'Forever',
+        svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>'},
+    ].map((f) => (
+      <div class="dh-feature-card group bg-surface border border-border rounded-2xl p-6 hover:border-brand/40 transition-all duration-300 cursor-default relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-brand/0 to-brand/0 group-hover:from-brand/5 group-hover:to-transparent transition-all duration-500 pointer-events-none rounded-2xl"></div>
+        <div class="relative z-10">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-9 h-9 rounded-xl bg-brand/20 border border-brand/30 flex items-center justify-center dh-feature-icon shrink-0">
+              <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24" set:html={f.svg}></svg>
+            </div>
+            <div class="text-right">
+              <p class="text-brand font-black text-xl leading-none">{f.stat}</p>
+              <p class="text-muted text-[10px]">{f.statLabel}</p>
+            </div>
+          </div>
+          <h3 class="font-bold text-white mb-2 text-sm">{f.title}</h3>
+          <p class="text-muted text-xs leading-relaxed">{f.desc}</p>
+          <div class="dh-card-line mt-4 h-0.5 w-0 bg-gradient-to-r from-brand to-transparent rounded-full group-hover:w-full transition-all duration-500"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     WIN RATE STATS (SVG Donut + Bars)
+═══════════════════════════════════════════════════════════════ -->
+<section id="dh-winrate" class="border-t border-border bg-surface">
+  <div class="max-w-7xl mx-auto px-4 py-16 md:py-20">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div class="flex flex-col items-center gap-6">
+        <h2 class="dh-section-title text-2xl md:text-3xl font-black text-white text-center">Statistik Performa</h2>
+        <div class="relative w-52 h-52">
+          <svg viewBox="0 0 200 200" class="w-full h-full -rotate-90">
+            <circle cx="100" cy="100" r="80" fill="none" stroke="#1A1A1A" stroke-width="20"/>
+            <circle id="dh-donut-win" cx="100" cy="100" r="80" fill="none" stroke="#F97316" stroke-width="20"
+              stroke-dasharray="502" stroke-dashoffset="502" stroke-linecap="round"/>
+            <circle id="dh-donut-purple" cx="100" cy="100" r="58" fill="none" stroke="#A855F7" stroke-width="14"
+              stroke-dasharray="364" stroke-dashoffset="364" stroke-linecap="round"/>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <p class="text-3xl font-black text-white"><span id="dh-donut-num">0</span>%</p>
+            <p class="text-muted text-xs">Win Rate</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-6 text-xs">
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-brand inline-block"></span> Win Rate Avg</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> Rank Up Rate</span>
+        </div>
+      </div>
+      <div class="space-y-5">
+        <h3 class="font-black text-white text-lg">Win Rate per Peran</h3>
+        {[
+          {role:'Roamer / Support', wr: 78, color:'#F97316'},
+          {role:'Gold Lane', wr: 72, color:'#A855F7'},
+          {role:'Mid Lane', wr: 69, color:'#3B82F6'},
+          {role:'Exp Lane', wr: 74, color:'#10B981'},
+          {role:'Jungler', wr: 81, color:'#F59E0B'},
+        ].map((r) => (
+          <div class="dh-wr-row">
+            <div class="flex justify-between text-xs mb-1.5">
+              <span class="font-semibold text-white">{r.role}</span>
+              <span class="font-black" style={`color: ${r.color}`}>{r.wr}%</span>
+            </div>
+            <div class="w-full h-2 bg-surface-3 rounded-full overflow-hidden border border-border">
+              <div class="dh-wr-bar h-full rounded-full" data-width={r.wr} style={`background: ${r.color}; width: 0%`}></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SCREENSHOTS
+═══════════════════════════════════════════════════════════════ -->
+<section id="preview" class="max-w-7xl mx-auto px-4 py-16 md:py-20">
+  <div class="text-center mb-12">
+    <h2 class="dh-section-title text-2xl md:text-3xl font-black text-white mb-3">Tampilan Cheat Draft Hoki</h2>
+        <p class="dh-section-sub text-muted text-sm md:text-base">Bukti nyata cheat rank booster Draft Hoki bekerja — dari tampilan hingga hasil boost.</p>
+  </div>
+  <div class="max-w-md mx-auto mb-6">
+    <div class="h-1 bg-surface-3 rounded-full overflow-hidden border border-border">
+      <div id="dh-ss-progress" class="h-full bg-brand rounded-full transition-all duration-300" style="width: 25%"></div>
+    </div>
+  </div>
+  <div id="dh-screenshots" class="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory cursor-grab active:cursor-grabbing select-none">
+    {[
+      {src:'/draft-hoki/screenshot-1.png', label:'Tampilan Utama'},
+      {src:'/draft-hoki/screenshot-2.png', label:'Mode Boost Aktif'},
+      {src:'/draft-hoki/screenshot-3.png', label:'Hasil Rank Up'},
+      {src:'/draft-hoki/screenshot-4.png', label:'Anti Banned Log'},
+    ].map((ss, i) => (
+      <div class="dh-screenshot shrink-0 w-44 md:w-52 snap-center">
+        <div class="bg-surface-2 border border-border rounded-3xl overflow-hidden aspect-[9/18] relative group">
+          <img src={ss.src} alt={ss.label} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-10" loading="lazy"/>
+          <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface-2 z-0">
+            <div class="w-12 h-12 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center">
+              <svg class="w-6 h-6 text-brand/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke-width="1.5"/></svg>
+            </div>
+            <p class="text-muted/60 text-xs text-center px-4">Screenshot {i+1}<br/>Segera Hadir</p>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 z-20">
+            <p class="text-white text-xs font-bold text-center">{ss.label}</p>
+          </div>
+        </div>
+        <div class="flex justify-center mt-2">
+          <span class="w-2 h-2 rounded-full bg-border dh-ss-dot" data-index={i}></span>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     VIDEO PREVIEW
+═══════════════════════════════════════════════════════════════ -->
+<section class="border-t border-border bg-surface">
+  <div class="max-w-3xl mx-auto px-4 py-16 md:py-20">
+    <div class="text-center mb-10">
+      <h2 class="dh-section-title text-2xl md:text-3xl font-black text-white mb-3">Preview Aplikasi</h2>
+      <p class="dh-section-sub text-muted text-sm md:text-base">Lihat bagaimana cheat rank booster Draft Hoki bekerja secara nyata.</p>
+    </div>
+    <div id="dh-video-wrapper">
+      <div class="relative bg-surface-2 border border-border rounded-3xl overflow-hidden aspect-video flex items-center justify-center group cursor-pointer">
+        <div class="absolute w-24 h-24 rounded-full border-2 border-brand/20 dh-ping-ring pointer-events-none"></div>
+        <div class="absolute w-36 h-36 rounded-full border border-brand/10 dh-ping-ring-2 pointer-events-none"></div>
+        <div class="flex flex-col items-center gap-4 relative z-10" id="dh-play-placeholder" data-video="">
+          <div class="w-20 h-20 rounded-full bg-brand/20 border-2 border-brand/40 flex items-center justify-center group-hover:bg-brand/30 transition-all group-hover:scale-110 duration-300 shadow-lg shadow-brand/20">
+            <svg class="w-8 h-8 text-brand ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+          <p class="text-muted text-sm font-medium">Video Preview Segera Hadir</p>
+          <p class="text-muted/50 text-xs">Tambahkan link video YouTube di data-video</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FAQ
+═══════════════════════════════════════════════════════════════ -->
+<section id="dh-faq" class="max-w-3xl mx-auto px-4 py-16 md:py-20">
+  <div class="text-center mb-12">
+    <h2 class="dh-section-title text-2xl md:text-3xl font-black text-white mb-3">FAQ</h2>
+    <p class="dh-section-sub text-muted text-sm">Pertanyaan yang sering ditanyakan tentang Draft Hoki.</p>
+  </div>
+  <div class="space-y-3" id="dh-faq-list">
+    {[
+      {q:'Apakah Draft Hoki aman dan anti banned?',a:'Ya, 100% aman. Sistem anti-detection kami terus diperbarui mengikuti patch ML terbaru. Sudah dipakai ribuan user tanpa satu pun yang kena banned.'},
+      {q:'Apakah aplikasi ini gratis?',a:'Sepenuhnya gratis tanpa biaya apapun. Tidak ada biaya langganan tersembunyi, tidak ada iklan mengganggu. Semua fitur cheat rank booster bisa dinikmati gratis selamanya.'},
+      {q:'Device apa yang didukung?',a:'Draft Hoki mendukung Android 6.0 ke atas. Aplikasi dioptimasi agar ringan dan berjalan di HP low-end sekalipun tanpa lag.'},
+      {q:'Seberapa cepat rank bisa naik?',a:'Tergantung rank saat ini, rata-rata user bisa naik 5-10 tier dalam sehari. Fitur boost otomatis bekerja di background sehingga kamu tidak perlu terus memantaunya.'},
+      {q:'Apakah perlu root atau akses khusus?',a:'Tidak perlu root. Draft Hoki bisa langsung diinstall dan digunakan tanpa modifikasi sistem apapun. Cukup install APK dan jalankan.'},
+    ].map((item, i) => (
+      <div class="dh-faq-item bg-surface border border-border rounded-2xl overflow-hidden" data-open="false">
+        <button class="dh-faq-btn w-full flex items-center justify-between px-5 py-4 text-left gap-4 hover:bg-surface-2 transition-colors" data-index={i}>
+          <span class="font-semibold text-white text-sm">{item.q}</span>
+          <svg class="dh-faq-arrow w-5 h-5 text-muted shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+        <div class="dh-faq-body overflow-hidden" style="height: 0px;">
+          <p class="px-5 pb-4 text-muted text-sm leading-relaxed">{item.a}</p>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     DOWNLOAD SECTION
+═══════════════════════════════════════════════════════════════ -->
+<section id="download" class="border-t border-border relative overflow-hidden">
+  <svg class="absolute top-0 left-0 right-0 w-full pointer-events-none opacity-30" viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    <path id="dh-wave-path" d="M0,30 C360,60 720,0 1080,30 C1260,45 1380,20 1440,30 L1440,0 L0,0 Z" fill="#F97316"/>
+  </svg>
+  <div class="absolute inset-0 pointer-events-none">
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand/5 rounded-full blur-[120px]"></div>
+  </div>
+  <div class="max-w-3xl mx-auto px-4 py-20 md:py-24 text-center relative z-10">
+    <div id="dh-download-section" class="bg-surface-2/80 backdrop-blur-sm border border-brand/20 rounded-3xl p-8 md:p-14 relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-brand/8 via-transparent to-purple-900/8 pointer-events-none rounded-3xl"></div>
+      <div class="relative z-10 flex flex-col items-center gap-6">
+        <div id="dh-dl-icon" class="w-24 h-24 rounded-3xl bg-brand/20 border-2 border-brand/40 flex items-center justify-center shadow-2xl shadow-brand/20">
+          <svg class="w-12 h-12 text-brand" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+        <div>
+          <div class="inline-block text-xs font-bold bg-green-400/10 text-green-400 border border-green-400/20 px-3 py-1 rounded-full mb-3">Verified Safe — Anti Banned 100%</div>
+          <h2 class="text-2xl md:text-4xl font-black text-white mb-2">Download Draft Hoki<br/>Sekarang Juga!</h2>
+          <p class="text-muted text-sm md:text-base max-w-sm mx-auto">Gratis selamanya. Cheat rank booster terpercaya, push rank kamu ke Mythic hari ini juga.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <a href="#" id="dh-apk-btn" data-apk-url=""
+             class="dh-magnetic relative overflow-hidden inline-flex items-center gap-3 px-8 py-4 bg-brand text-white font-bold rounded-2xl text-sm shadow-2xl shadow-brand/30 group">
+            <span class="dh-magnetic-inner relative z-10 flex items-center gap-3">
+              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 16l-4-4h3V4h2v8h3l-4 4zm-7 2h14v2H5v-2z"/></svg>
+              <div class="text-left">
+                <p class="text-[10px] font-normal opacity-80 leading-none mb-0.5">Download Gratis</p>
+                <p class="font-bold leading-none text-base">APK Android</p>
+              </div>
+            </span>
+            <span class="absolute inset-0 bg-white/10 scale-0 group-hover:scale-100 rounded-2xl transition-transform duration-500 ease-out origin-center"></span>
+          </a>
+          <a href="/" class="dh-magnetic inline-flex items-center gap-2 px-8 py-4 border border-border hover:border-brand/40 text-white font-semibold rounded-2xl text-sm transition-colors">
+            <span class="dh-magnetic-inner flex items-center gap-2">← Kembali ke Beranda</span>
+          </a>
+        </div>
+        <div class="flex items-center justify-center gap-4 flex-wrap text-xs text-muted pt-2">
+          {[['✓','Android 6.0+'],['✓','100% Gratis'],['✓','Aman & Terpercaya'],['✓','No Root Required']].map(([icon, label]) => (
+            <span class="flex items-center gap-1.5 text-green-400/80">
+              <span class="font-black text-green-400">{icon}</span>
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</Layout>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { TextPlugin } from 'gsap/TextPlugin';
+  gsap.registerPlugin(ScrollTrigger, TextPlugin);
+
+  // ── PARTICLE CANVAS ──────────────────────────────────────────────
+  const canvas = document.getElementById('dh-particles') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  interface Particle { x:number;y:number;vx:number;vy:number;size:number;alpha:number; }
+  const particles: Particle[] = Array.from({length:60},()=>({
+    x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+    vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4,
+    size:Math.random()*2+.5, alpha:Math.random()*.5+.1,
+  }));
+  function drawParticles() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0)p.x=canvas.width; if(p.x>canvas.width)p.x=0;
+      if(p.y<0)p.y=canvas.height; if(p.y>canvas.height)p.y=0;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(249,115,22,${p.alpha})`; ctx.fill();
+    });
+    for(let i=0;i<particles.length;i++) for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<100){ ctx.beginPath(); ctx.moveTo(particles[i].x,particles[i].y); ctx.lineTo(particles[j].x,particles[j].y);
+        ctx.strokeStyle=`rgba(249,115,22,${(1-d/100)*.08})`; ctx.lineWidth=.5; ctx.stroke(); }
+    }
+    requestAnimationFrame(drawParticles);
+  }
+  drawParticles();
+  window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+
+  // ── MARQUEE ──────────────────────────────────────────────────────
+  const ticker = document.getElementById('dh-ticker');
+  if(ticker){ const w=ticker.scrollWidth/3; gsap.to(ticker,{x:-w,duration:30,ease:'none',repeat:-1}); }
+
+  // ── MESH GRADIENTS ───────────────────────────────────────────────
+  gsap.to('.dh-mesh-1',{x:60,y:40,duration:8,ease:'sine.inOut',repeat:-1,yoyo:true});
+  gsap.to('.dh-mesh-2',{x:-50,y:-30,duration:10,ease:'sine.inOut',repeat:-1,yoyo:true});
+  gsap.to('.dh-mesh-3',{scale:1.3,duration:6,ease:'sine.inOut',repeat:-1,yoyo:true});
+
+  // ── SVG LIGHTNING DRAW ───────────────────────────────────────────
+  gsap.to('#dh-lightning-path',{strokeDashoffset:0,duration:.8,ease:'power2.out',delay:.3});
+
+  // ── HERO TEXT LINES SLIDE UP ─────────────────────────────────────
+  const heroTl = gsap.timeline({defaults:{ease:'power3.out'}});
+  heroTl
+    .from('#dh-badge',{opacity:0,y:24,duration:.6})
+    .from('.dh-title-inner',{y:'110%',duration:.8,stagger:.12},'-=.2')
+    .from('#dh-desc',{opacity:0,y:20,duration:.6},'-=.3')
+    .from('#dh-stats > *',{opacity:0,y:20,duration:.4,stagger:.1},'-=.3')
+    .from('#dh-cta > *',{opacity:0,y:20,scale:.95,duration:.4,stagger:.1},'-=.2')
+    .from('#dh-mockup',{opacity:0,x:80,duration:1,ease:'power4.out'},'-=.7');
+
+  // ── TYPEWRITER ───────────────────────────────────────────────────
+  const words = ['Otomatis','Anti Banned','Ke Mythic!','Terpercaya'];
+  let wIdx = 0;
+  const tw = document.getElementById('dh-typewriter');
+  const cur = document.getElementById('dh-cursor');
+  if(cur) gsap.to(cur,{opacity:0,duration:.5,repeat:-1,yoyo:true,ease:'none'});
+  function typeWord(){
+    if(!tw) return;
+    const word=words[wIdx%words.length];
+    gsap.to(tw,{text:{value:word,delimiter:''},duration:word.length*.06,ease:'none',
+      onComplete:()=>gsap.delayedCall(1.5,()=>gsap.to(tw,{text:{value:'',delimiter:''},duration:word.length*.04,ease:'none',
+        onComplete:()=>{wIdx++;gsap.delayedCall(.3,typeWord);}
+      }))
+    });
+  }
+  gsap.delayedCall(1.8,typeWord);
+
+  // ── COUNTER ANIMATION ────────────────────────────────────────────
+  ScrollTrigger.create({trigger:'#dh-stats',start:'top 85%',once:true,
+    onEnter:()=>{
+      document.querySelectorAll<HTMLElement>('.dh-counter').forEach(el=>{
+        const t=parseInt(el.dataset.target||'0');
+        gsap.to({val:0},{val:t,duration:1.5,ease:'power2.out',onUpdate:function(){el.textContent=Math.round(this.targets()[0].val).toString();}});
+      });
+      document.querySelectorAll<HTMLElement>('.dh-counter-decimal').forEach(el=>{
+        const t=parseFloat(el.dataset.target||'0');
+        gsap.to({val:0},{val:t,duration:1.5,ease:'power2.out',onUpdate:function(){el.textContent=this.targets()[0].val.toFixed(1);}});
+      });
+    }
+  });
+
+  // ── PHONE 3D TILT ────────────────────────────────────────────────
+  const pw=document.getElementById('dh-phone-wrapper'), p3=document.getElementById('dh-phone-3d');
+  if(pw&&p3){
+    pw.addEventListener('mousemove',e=>{
+      const r=pw.getBoundingClientRect();
+      const rx=((e.clientY-r.top-r.height/2)/r.height)*-18;
+      const ry=((e.clientX-r.left-r.width/2)/r.width)*18;
+      gsap.to(p3,{rotateX:rx,rotateY:ry,duration:.4,ease:'power2.out'});
+    });
+    pw.addEventListener('mouseleave',()=>gsap.to(p3,{rotateX:0,rotateY:0,duration:.8,ease:'elastic.out(1,.5)'}));
+  }
+  gsap.to('.dh-phone',{y:-14,duration:3.5,ease:'sine.inOut',repeat:-1,yoyo:true});
+  gsap.to('.dh-float-badge',{y:-8,duration:2.5,ease:'sine.inOut',repeat:-1,yoyo:true,stagger:.6});
+  gsap.to('.dh-phone-glow',{opacity:.4,scale:1.2,duration:2.5,ease:'sine.inOut',repeat:-1,yoyo:true});
+  gsap.to('#dh-phone-bar',{width:'74%',duration:2.5,ease:'power2.out',delay:1.8});
+  gsap.from('.dh-phone-card',{opacity:0,x:20,duration:.4,stagger:.15,delay:1.2,ease:'power2.out'});
+
+  // ── SCROLL DOT ───────────────────────────────────────────────────
+  gsap.to('#dh-scroll-dot',{y:14,duration:1.2,ease:'sine.inOut',repeat:-1,yoyo:true});
+  ScrollTrigger.create({trigger:'#dh-rank-section',start:'top 80%',
+    onEnter:()=>gsap.to('#dh-scroll-hint',{opacity:0,duration:.3})});
+
+  // ── SECTION TITLE REVEALS ────────────────────────────────────────
+  gsap.utils.toArray<HTMLElement>('.dh-section-title').forEach(el=>{
+    gsap.from(el,{opacity:0,y:30,duration:.7,ease:'power2.out',scrollTrigger:{trigger:el,start:'top 88%'}});
+  });
+  gsap.utils.toArray<HTMLElement>('.dh-section-sub').forEach(el=>{
+    gsap.from(el,{opacity:0,y:20,duration:.6,ease:'power2.out',scrollTrigger:{trigger:el,start:'top 88%'}});
+  });
+
+  // ── RANK PROGRESSION ─────────────────────────────────────────────
+  gsap.from('.dh-rank-badge',{opacity:0,scale:.4,y:30,duration:.5,ease:'back.out(2)',stagger:.1,
+    scrollTrigger:{trigger:'#dh-rank-section',start:'top 80%'}});
+  gsap.from('.dh-rank-arrow',{opacity:0,x:-10,duration:.3,stagger:.1,delay:.6,
+    scrollTrigger:{trigger:'#dh-rank-section',start:'top 80%'}});
+  gsap.to('#dh-rank-bar',{width:'95%',duration:2,ease:'power2.out',
+    scrollTrigger:{trigger:'#dh-rank-section',start:'top 80%'}});
+
+  // ── FEATURE CARDS ────────────────────────────────────────────────
+  gsap.utils.toArray<HTMLElement>('.dh-feature-card').forEach((card, i) => {
+    gsap.from(card, {
+      opacity: 0, y: 50, scale: .95, duration: .6, ease: 'power2.out',
+      delay: (i % 3) * 0.1,
+      scrollTrigger: { trigger: card, start: 'top 92%', once: true },
+    });
+  });
+  gsap.utils.toArray<HTMLElement>('.dh-feature-icon').forEach((icon, i) => {
+    gsap.from(icon, {
+      scale: 0, duration: .4, ease: 'back.out(3)',
+      delay: (i % 3) * 0.1 + 0.1,
+      scrollTrigger: { trigger: icon, start: 'top 92%', once: true },
+    });
+  });
+
+  // ── SVG DONUT + WIN RATE BARS ────────────────────────────────────
+  ScrollTrigger.create({trigger:'#dh-winrate',start:'top 80%',once:true,
+    onEnter:()=>{
+      gsap.to('#dh-donut-win',{strokeDashoffset:502*(1-.74),duration:2,ease:'power2.out'});
+      gsap.to('#dh-donut-purple',{strokeDashoffset:364*(1-.62),duration:2.2,ease:'power2.out',delay:.2});
+      gsap.to({val:0},{val:74,duration:2,ease:'power2.out',
+        onUpdate:function(){const el=document.getElementById('dh-donut-num');if(el)el.textContent=Math.round(this.targets()[0].val).toString();}});
+      document.querySelectorAll<HTMLElement>('.dh-wr-bar').forEach(bar=>{
+        gsap.to(bar,{width:`${bar.dataset.width}%`,duration:1.5,ease:'power2.out',delay:.3});
+      });
+    }
+  });
+  gsap.from('.dh-wr-row',{opacity:0,x:-30,duration:.5,stagger:.1,ease:'power2.out',
+    scrollTrigger:{trigger:'#dh-winrate',start:'top 80%'}});
+
+  // ── SCREENSHOTS DRAG SCROLL ──────────────────────────────────────
+  const ssc=document.getElementById('dh-screenshots')!;
+  const ssp=document.getElementById('dh-ss-progress')!;
+  const ssDots=document.querySelectorAll<HTMLElement>('.dh-ss-dot');
+  if(ssc){
+    let drag=false,sx=0,sl=0;
+    ssc.addEventListener('mousedown',e=>{drag=true;sx=e.pageX-ssc.offsetLeft;sl=ssc.scrollLeft;});
+    document.addEventListener('mouseup',()=>{drag=false;});
+    ssc.addEventListener('mousemove',e=>{if(!drag)return;e.preventDefault();
+      ssc.scrollLeft=sl-(e.pageX-ssc.offsetLeft-sx)*1.5;});
+    ssc.addEventListener('scroll',()=>{
+      const pct=(ssc.scrollLeft/(ssc.scrollWidth-ssc.clientWidth))*100;
+      if(ssp)ssp.style.width=`${Math.max(5,pct)}%`;
+      const idx=Math.round(ssc.scrollLeft/(ssc.scrollWidth/4));
+      ssDots.forEach((d,i)=>{
+        d.style.background=i===idx?'#F97316':''; d.style.width=i===idx?'20px':'';
+        d.style.borderRadius='4px'; d.style.transition='all .3s';
+      });
+    });
+  }
+  gsap.from('.dh-screenshot',{opacity:0,y:40,scale:.9,duration:.5,stagger:.12,ease:'back.out(1.4)',
+    scrollTrigger:{trigger:'#dh-screenshots',start:'top 85%'}});
+
+  // ── VIDEO PING RINGS ─────────────────────────────────────────────
+  gsap.to('.dh-ping-ring',{scale:1.8,opacity:0,duration:2,ease:'power2.out',repeat:-1});
+  gsap.to('.dh-ping-ring-2',{scale:1.6,opacity:0,duration:2.5,ease:'power2.out',repeat:-1,delay:.6});
+  gsap.from('#dh-video-wrapper',{opacity:0,y:40,duration:.8,ease:'power2.out',
+    scrollTrigger:{trigger:'#dh-video-wrapper',start:'top 85%'}});
+
+  // ── FAQ ACCORDION ────────────────────────────────────────────────
+  document.querySelectorAll<HTMLElement>('.dh-faq-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const item=btn.closest('.dh-faq-item') as HTMLElement;
+      const body=item.querySelector<HTMLElement>('.dh-faq-body')!;
+      const arrow=item.querySelector<HTMLElement>('.dh-faq-arrow')!;
+      const isOpen=item.dataset.open==='true';
+      document.querySelectorAll<HTMLElement>('.dh-faq-item').forEach(el=>{
+        el.dataset.open='false';
+        gsap.to(el.querySelector<HTMLElement>('.dh-faq-body')!,{height:0,duration:.35,ease:'power2.inOut'});
+        gsap.to(el.querySelector<HTMLElement>('.dh-faq-arrow')!,{rotate:0,duration:.3});
+      });
+      if(!isOpen){
+        item.dataset.open='true';
+        gsap.set(body,{height:'auto'});
+        const h=body.offsetHeight;
+        gsap.fromTo(body,{height:0},{height:h,duration:.4,ease:'power2.out'});
+        gsap.to(arrow,{rotate:180,duration:.3});
+      }
+    });
+  });
+  gsap.from('.dh-faq-item',{opacity:0,y:20,duration:.4,stagger:.07,ease:'power2.out',
+    scrollTrigger:{trigger:'#dh-faq',start:'top 85%'}});
+
+  // ── DOWNLOAD SECTION ────────────────────────────────────────────
+  gsap.from('#dh-download-section',{opacity:0,y:60,scale:.95,duration:.9,ease:'power3.out',
+    scrollTrigger:{trigger:'#dh-download-section',start:'top 85%'}});
+  gsap.from('#dh-dl-icon',{scale:0,rotation:-15,duration:.7,ease:'back.out(2)',
+    scrollTrigger:{trigger:'#dh-download-section',start:'top 85%'}});
+  gsap.to('#dh-dl-icon',{y:-8,duration:2,ease:'sine.inOut',repeat:-1,yoyo:true,delay:1});
+  gsap.to('#dh-apk-btn',{
+    boxShadow:'0 0 40px rgba(249,115,22,.6), 0 0 80px rgba(249,115,22,.2)',
+    duration:1.2,ease:'sine.inOut',repeat:-1,yoyo:true,
+    scrollTrigger:{trigger:'#dh-apk-btn',start:'top 90%'}
+  });
+  gsap.to('#dh-wave-path',{
+    attr:{d:'M0,20 C360,50 720,10 1080,40 C1260,55 1380,15 1440,25 L1440,0 L0,0 Z'},
+    duration:4,ease:'sine.inOut',repeat:-1,yoyo:true
+  });
+
+  // ── MAGNETIC BUTTONS ─────────────────────────────────────────────
+  document.querySelectorAll<HTMLElement>('.dh-magnetic').forEach(btn=>{
+    const inner=btn.querySelector<HTMLElement>('.dh-magnetic-inner');
+    btn.addEventListener('mousemove',e=>{
+      const r=btn.getBoundingClientRect();
+      const dx=(e.clientX-r.left-r.width/2)*.25;
+      const dy=(e.clientY-r.top-r.height/2)*.25;
+      gsap.to(btn,{x:dx,y:dy,duration:.3,ease:'power2.out'});
+      if(inner)gsap.to(inner,{x:dx*.3,y:dy*.3,duration:.3,ease:'power2.out'});
+    });
+    btn.addEventListener('mouseleave',()=>{
+      gsap.to(btn,{x:0,y:0,duration:.6,ease:'elastic.out(1,.4)'});
+      if(inner)gsap.to(inner,{x:0,y:0,duration:.6,ease:'elastic.out(1,.4)'});
+    });
+  });
+</script>
+
+<style>
+  #dh-screenshots::-webkit-scrollbar{display:none;}
+  #dh-screenshots{-ms-overflow-style:none;scrollbar-width:none;}
+  .dh-ping-ring,.dh-ping-ring-2{position:absolute;border-radius:9999px;pointer-events:none;}
+  #dh-title span{display:block;}
+</style>

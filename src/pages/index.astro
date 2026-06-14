@@ -56,6 +56,39 @@ const fmt = (p: number) =>
     </div>
   </section>
 
+  <!-- Draft Hoki Banner -->
+  <section id="dh-banner" class="border-b border-border">
+    <div class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+      <div class="relative overflow-hidden bg-gradient-to-r from-surface-2 via-brand/5 to-surface-2 border border-brand/20 rounded-3xl p-6 md:p-10">
+        <div class="absolute inset-0 bg-gradient-to-br from-brand/5 via-transparent to-purple-900/5 pointer-events-none"></div>
+        <div class="absolute -top-10 -right-10 w-56 h-56 bg-brand/5 rounded-full blur-3xl pointer-events-none" id="dh-banner-glow"></div>
+        <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-10">
+          <!-- Icon -->
+          <div id="dh-banner-icon" class="shrink-0 w-20 h-20 rounded-3xl bg-brand/20 border border-brand/30 flex items-center justify-center shadow-lg shadow-brand/10">
+            <svg class="w-10 h-10 text-brand" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <!-- Text -->
+          <div id="dh-banner-text" class="flex-1 text-center md:text-left">
+            <span class="inline-block text-xs font-semibold bg-brand/10 text-brand px-2.5 py-1 rounded-full border border-brand/20 mb-2">
+              Rank Booster App
+            </span>
+            <h2 class="text-xl md:text-2xl font-black text-white mb-1">Download Draft Hoki — Naik Rank Lebih Cepat!</h2>
+            <p class="text-muted text-sm max-w-lg">Aplikasi draft & rank booster Mobile Legends gratis. Analisis hero pick terbaik, tier list update otomatis, 100% aman.</p>
+          </div>
+          <!-- CTA -->
+          <a
+            id="dh-banner-btn"
+            href="/draft-hoki"
+            class="shrink-0 inline-flex items-center gap-2 px-6 py-3.5 bg-brand hover:bg-brand-hover text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-brand/20 hover:shadow-brand/40 hover:-translate-y-0.5"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 16l-4-4h3V4h2v8h3l-4 4zm-7 2h14v2H5v-2z"/></svg>
+            Download Sekarang
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Categories -->
   <section class="max-w-7xl mx-auto px-4 py-8">
     <h2 class="text-lg font-bold text-white mb-4">Kategori Game</h2>
@@ -135,3 +168,90 @@ const fmt = (p: number) =>
     </div>
   </section>
 </Layout>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  // ─── Hero ─────────────────────────────────────────────────────────────────────
+  const heroSection = document.querySelector('section');
+  if (heroSection) {
+    const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    heroTl
+      .from('section:first-of-type span.inline-flex', { opacity: 0, y: 20, duration: 0.5 })
+      .from('section:first-of-type h1', { opacity: 0, y: 40, duration: 0.7 }, '-=0.2')
+      .from('section:first-of-type p.text-muted', { opacity: 0, y: 20, duration: 0.5 }, '-=0.4')
+      .from('section:first-of-type .flex.items-center.gap-3', { opacity: 0, y: 20, duration: 0.5 }, '-=0.3')
+      .from('section:first-of-type .flex.items-center.gap-8', { opacity: 0, y: 15, duration: 0.4 }, '-=0.2');
+  }
+
+  // ─── Product cards ─────────────────────────────────────────────────────────────
+  gsap.from('.grid.grid-cols-2 > a', {
+    opacity: 0,
+    y: 40,
+    duration: 0.5,
+    ease: 'power2.out',
+    stagger: 0.07,
+    scrollTrigger: {
+      trigger: '.grid.grid-cols-2',
+      start: 'top 85%',
+    },
+  });
+
+  // ─── Draft Hoki Banner ─────────────────────────────────────────────────────────
+  gsap.from('#dh-banner > div > div', {
+    opacity: 0,
+    y: 50,
+    scale: 0.97,
+    duration: 0.8,
+    ease: 'power3.out',
+    scrollTrigger: {
+      trigger: '#dh-banner',
+      start: 'top 85%',
+    },
+  });
+
+  gsap.from('#dh-banner-icon', {
+    opacity: 0,
+    scale: 0.5,
+    duration: 0.7,
+    ease: 'back.out(2)',
+    scrollTrigger: {
+      trigger: '#dh-banner',
+      start: 'top 85%',
+    },
+  });
+
+  gsap.to('#dh-banner-icon', {
+    y: -6,
+    duration: 2.5,
+    ease: 'sine.inOut',
+    repeat: -1,
+    yoyo: true,
+    delay: 1,
+  });
+
+  gsap.to('#dh-banner-glow', {
+    scale: 1.3,
+    opacity: 0.6,
+    duration: 3,
+    ease: 'sine.inOut',
+    repeat: -1,
+    yoyo: true,
+  });
+
+  // ─── How to order steps ────────────────────────────────────────────────────────
+  gsap.from('.grid.grid-cols-2.md\\:grid-cols-4 > div', {
+    opacity: 0,
+    y: 30,
+    duration: 0.5,
+    ease: 'power2.out',
+    stagger: 0.15,
+    scrollTrigger: {
+      trigger: '.grid.grid-cols-2.md\\:grid-cols-4',
+      start: 'top 85%',
+    },
+  });
+</script>
