@@ -188,16 +188,19 @@ const fmt = (p: number) =>
   }
 
   // ─── Product cards ─────────────────────────────────────────────────────────────
-  gsap.from('.grid.grid-cols-2 > a', {
-    opacity: 0,
-    y: 40,
-    duration: 0.5,
-    ease: 'power2.out',
-    stagger: 0.07,
-    scrollTrigger: {
-      trigger: '.grid.grid-cols-2',
-      start: 'top 85%',
-    },
+  gsap.utils.toArray<HTMLElement>('.grid.grid-cols-2 > a').forEach((card, i) => {
+    gsap.from(card, {
+      opacity: 0,
+      y: 30,
+      duration: 0.5,
+      ease: 'power2.out',
+      delay: (i % 4) * 0.07,
+      scrollTrigger: {
+        trigger: card,
+        start: 'top 100%',
+        once: true,
+      },
+    });
   });
 
   // ─── Draft Hoki Banner ─────────────────────────────────────────────────────────
