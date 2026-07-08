@@ -4,13 +4,15 @@ import { sql } from '../lib/db';
 
 const user = Astro.locals.user!;
 const files = (await sql`
-  SELECT o.id AS order_id, o.created_at, o.total_amount,
+  SELECT o.id AS order_id, o.created_at, o.expires_at, o.total_amount,
          oi.product_name, oi.quantity,
          p.download_link, p.name AS current_product_name
   FROM orders o
   JOIN order_items oi ON oi.order_id = o.id
   LEFT JOIN products p ON p.id = oi.product_id
-  WHERE o.user_id = ${user.userId} AND o.status = 'approved'
+  WHERE o.user_id = ${user.userId}
+    AND o.status = 'approved'
+    AND (o.expires_at IS NULL OR o.expires_at > NOW())
   ORDER BY o.created_at DESC
 `.catch(() => [])) as any[];
 ---
@@ -39,6 +41,15 @@ const files = (await sql`
                 {new Date(f.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                 {f.quantity > 1 && ` · Qty: ${f.quantity}`}
               </p>
+              {f.expires_at && (() => {
+                const daysLeft = Math.ceil((new Date(f.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                return (
+                  <p class={`text-xs mt-0.5 font-medium ${daysLeft <= 3 ? 'text-red-400' : daysLeft <= 7 ? 'text-yellow-400' : 'text-muted'}`}>
+                    Akses berakhir {daysLeft <= 0 ? 'hari ini' : `${daysLeft} hari lagi`}
+                    {' '}({new Date(f.expires_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })})
+                  </p>
+                );
+              })()}
             </div>
             {f.download_link ? (
               <a

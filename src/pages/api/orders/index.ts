@@ -55,7 +55,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   try {
-    const { proofUrl, proofPublicId } = await request.json();
+    const { proofUrl, proofPublicId, voucherId } = await request.json();
     if (!proofUrl) {
       return new Response(JSON.stringify({ error: 'Bukti pembayaran wajib diupload' }), {
         status: 400,
@@ -84,16 +84,57 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    const total = cartItems.reduce(
+    const rawTotal = cartItems.reduce(
       (sum: number, i: Record<string, unknown>) =>
         sum + (i.price as number) * (i.quantity as number),
       0,
     );
 
+    // Apply voucher discount if provided
+    let discountAmount = 0;
+    let resolvedVoucherId: string | null = null;
+    if (voucherId) {
+      const vRows = await sql`
+        SELECT v.*,
+          COALESCE(
+            json_agg(vp.product_id::text) FILTER (WHERE vp.product_id IS NOT NULL),
+            '[]'
+          ) AS allowed_product_ids
+        FROM vouchers v
+        LEFT JOIN voucher_products vp ON vp.voucher_id = v.id
+        WHERE v.id = ${voucherId} AND v.is_active = TRUE
+        GROUP BY v.id
+      `;
+      if (vRows.length) {
+        const v = vRows[0] as any;
+        const now = new Date();
+        const notExpired = !v.expires_at || new Date(v.expires_at) > now;
+        const notMaxed = v.max_uses === null || v.used_count < v.max_uses;
+        if (notExpired && notMaxed) {
+          const allowedIds: string[] = v.allowed_product_ids;
+          const eligible = v.applies_to === 'specific'
+            ? cartItems.filter((i: any) => allowedIds.includes(i.product_id as string))
+            : cartItems;
+          const eligibleSubtotal = eligible.reduce(
+            (s: number, i: any) => s + (i.price as number) * (i.quantity as number), 0
+          );
+          discountAmount = v.discount_type === 'percent'
+            ? Math.floor(eligibleSubtotal * v.discount_value / 100)
+            : Math.min(v.discount_value, eligibleSubtotal);
+          resolvedVoucherId = v.id;
+        }
+      }
+    }
+
+    const total = Math.max(0, rawTotal - discountAmount);
+
     // Create order
     const orderRows = await sql`
-      INSERT INTO orders (user_id, total_amount, status, proof_image_url, proof_public_id)
-      VALUES (${locals.user.userId}, ${total}, 'pending_approval', ${proofUrl}, ${proofPublicId})
+      INSERT INTO orders (user_id, total_amount, discount_amount, voucher_id, status, proof_image_url, proof_public_id)
+      VALUES (
+        ${locals.user.userId}, ${total}, ${discountAmount}, ${resolvedVoucherId},
+        'pending_approval', ${proofUrl}, ${proofPublicId}
+      )
       RETURNING id
     `;
     const orderId = orderRows[0].id;
@@ -109,6 +150,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Clear cart
     await sql`DELETE FROM cart_items WHERE user_id = ${locals.user.userId}`;
+
+    // Increment voucher used_count
+    if (resolvedVoucherId) {
+      await sql`UPDATE vouchers SET used_count = used_count + 1 WHERE id = ${resolvedVoucherId}`;
+    }
 
     return new Response(JSON.stringify({ ok: true, orderId }), {
       status: 201,

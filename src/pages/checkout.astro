@@ -28,6 +28,26 @@ const fmt = (p: number) =>
   <div class="max-w-2xl mx-auto px-4 py-8">
     <h1 class="text-2xl font-black text-white mb-6">Pembayaran</h1>
 
+    <!-- Voucher -->
+    <div class="bg-surface border border-border rounded-2xl p-5 mb-5">
+      <h2 class="font-semibold text-white mb-3 text-sm">Kode Voucher</h2>
+      <div class="flex gap-2">
+        <input
+          type="text" id="voucher-input" placeholder="Masukkan kode voucher"
+          class="flex-1 bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 uppercase"
+        />
+        <button
+          id="voucher-apply-btn"
+          class="px-4 py-2.5 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl text-sm transition-colors disabled:opacity-60"
+        >Pakai</button>
+        <button
+          id="voucher-remove-btn"
+          class="hidden px-4 py-2.5 bg-surface-2 hover:bg-surface-3 border border-border text-muted hover:text-white rounded-xl text-sm transition-colors"
+        >Hapus</button>
+      </div>
+      <div id="voucher-msg" class="hidden mt-2 text-xs px-1"></div>
+    </div>
+
     <!-- Order Summary -->
     <div class="bg-surface border border-border rounded-2xl p-5 mb-5">
       <h2 class="font-semibold text-white mb-3 text-sm">Ringkasan Pesanan</h2>
@@ -38,9 +58,13 @@ const fmt = (p: number) =>
             <span class="text-white font-medium">{fmt(item.price * item.quantity)}</span>
           </div>
         ))}
+        <div id="discount-row" class="hidden justify-between text-sm text-green-400">
+          <span>Diskon Voucher</span>
+          <span id="discount-display">-Rp0</span>
+        </div>
         <div class="border-t border-border pt-2 mt-1 flex justify-between font-bold">
           <span class="text-white">Total</span>
-          <span class="text-brand text-lg">{fmt(total)}</span>
+          <span id="total-display" class="text-brand text-lg">{fmt(total)}</span>
         </div>
       </div>
     </div>
@@ -53,7 +77,7 @@ const fmt = (p: number) =>
           <div class="bg-white p-3 rounded-xl inline-block">
             <img src={qrisUrl} alt="QRIS Payment PusatMLBB" class="w-56 h-56 object-contain" />
           </div>
-          <p class="text-muted text-xs text-center">Transfer tepat <span class="text-brand font-bold">{fmt(total)}</span></p>
+          <p class="text-muted text-xs text-center">Transfer tepat <span id="qris-total-display" class="text-brand font-bold">{fmt(total)}</span></p>
         </div>
       ) : (
         <div class="text-center py-6 text-muted text-sm">
@@ -101,17 +125,97 @@ const fmt = (p: number) =>
     </div>
   </div>
 
-  <script>
-    const input = document.getElementById('proof-input') as HTMLInputElement;
-    const previewContainer = document.getElementById('preview-container')!;
-    const previewImg = document.getElementById('preview-img') as HTMLImageElement;
-    const previewName = document.getElementById('preview-name')!;
-    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-    const errorMsg = document.getElementById('error-msg')!;
-    const progress = document.getElementById('progress')!;
-    const progressBar = document.getElementById('progress-bar')!;
-    const progressText = document.getElementById('progress-text')!;
+  <script define:vars={{ originalTotal: total }}>
+    const input = document.getElementById('proof-input');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImg = document.getElementById('preview-img');
+    const previewName = document.getElementById('preview-name');
+    const submitBtn = document.getElementById('submit-btn');
+    const errorMsg = document.getElementById('error-msg');
+    const progress = document.getElementById('progress');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
 
+    // ── Voucher state ──────────────────────────────────────────────
+    let voucherId = null;
+    let discountAmount = 0;
+    let finalTotal = originalTotal;
+
+    const fmtRp = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+
+    const voucherInput = document.getElementById('voucher-input');
+    const voucherApplyBtn = document.getElementById('voucher-apply-btn');
+    const voucherRemoveBtn = document.getElementById('voucher-remove-btn');
+    const voucherMsg = document.getElementById('voucher-msg');
+    const discountRow = document.getElementById('discount-row');
+    const discountDisplay = document.getElementById('discount-display');
+    const totalDisplay = document.getElementById('total-display');
+    const qrisTotalDisplay = document.getElementById('qris-total-display');
+
+    function updateTotals() {
+      totalDisplay.textContent = fmtRp(finalTotal);
+      if (qrisTotalDisplay) qrisTotalDisplay.textContent = fmtRp(finalTotal);
+      if (discountAmount > 0) {
+        discountDisplay.textContent = `-${fmtRp(discountAmount)}`;
+        discountRow.classList.remove('hidden');
+        discountRow.classList.add('flex');
+      } else {
+        discountRow.classList.add('hidden');
+        discountRow.classList.remove('flex');
+      }
+    }
+
+    voucherInput.addEventListener('input', () => {
+      voucherInput.value = voucherInput.value.toUpperCase();
+    });
+
+    voucherApplyBtn.addEventListener('click', async () => {
+      const code = voucherInput.value.trim();
+      if (!code) return;
+      voucherApplyBtn.disabled = true;
+      voucherMsg.className = 'mt-2 text-xs px-1';
+      try {
+        const res = await fetch('/api/vouchers/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        voucherId = data.voucher.id;
+        discountAmount = data.discount_amount;
+        finalTotal = data.final_total;
+        updateTotals();
+
+        voucherMsg.textContent = `Voucher berhasil! Hemat ${fmtRp(discountAmount)}`;
+        voucherMsg.classList.add('text-green-400');
+        voucherMsg.classList.remove('hidden');
+        voucherInput.readOnly = true;
+        voucherApplyBtn.classList.add('hidden');
+        voucherRemoveBtn.classList.remove('hidden');
+      } catch (err) {
+        voucherMsg.textContent = err.message;
+        voucherMsg.classList.add('text-red-400');
+        voucherMsg.classList.remove('hidden');
+        voucherApplyBtn.disabled = false;
+      }
+    });
+
+    voucherRemoveBtn.addEventListener('click', () => {
+      voucherId = null;
+      discountAmount = 0;
+      finalTotal = originalTotal;
+      updateTotals();
+      voucherInput.value = '';
+      voucherInput.readOnly = false;
+      voucherMsg.classList.add('hidden');
+      voucherApplyBtn.classList.remove('hidden');
+      voucherApplyBtn.disabled = false;
+      voucherRemoveBtn.classList.add('hidden');
+    });
+
+    // ── File preview ───────────────────────────────────────────────
     input.addEventListener('change', () => {
       const file = input.files?.[0];
       if (file) {
@@ -121,6 +225,7 @@ const fmt = (p: number) =>
       }
     });
 
+    // ── Submit order ───────────────────────────────────────────────
     submitBtn.addEventListener('click', async () => {
       const file = input.files?.[0];
       if (!file) {
@@ -142,10 +247,7 @@ const fmt = (p: number) =>
 
         const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
         const uploadData = await uploadRes.json();
-
-        if (!uploadRes.ok) {
-          throw new Error(uploadData.error || 'Gagal mengupload gambar');
-        }
+        if (!uploadRes.ok) throw new Error(uploadData.error || 'Gagal mengupload gambar');
 
         progressBar.style.width = '70%';
         progressText.textContent = 'Membuat pesanan...';
@@ -153,19 +255,20 @@ const fmt = (p: number) =>
         const orderRes = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ proofUrl: uploadData.url, proofPublicId: uploadData.publicId }),
+          body: JSON.stringify({
+            proofUrl: uploadData.url,
+            proofPublicId: uploadData.publicId,
+            voucherId: voucherId,
+          }),
         });
         const orderData = await orderRes.json();
-
-        if (!orderRes.ok) {
-          throw new Error(orderData.error || 'Gagal membuat pesanan');
-        }
+        if (!orderRes.ok) throw new Error(orderData.error || 'Gagal membuat pesanan');
 
         progressBar.style.width = '100%';
         progressText.textContent = 'Pesanan berhasil dibuat!';
         setTimeout(() => (window.location.href = '/orders'), 800);
       } catch (err) {
-        errorMsg.textContent = (err as Error).message;
+        errorMsg.textContent = err.message;
         errorMsg.classList.remove('hidden');
         progress.classList.add('hidden');
         submitBtn.disabled = false;

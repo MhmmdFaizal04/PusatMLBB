@@ -1,0 +1,335 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { sql } from '../../lib/db';
+
+const vouchers = (await sql`
+  SELECT v.*,
+    COALESCE(
+      json_agg(json_build_object('id', p.id, 'name', p.name)) FILTER (WHERE p.id IS NOT NULL),
+      '[]'
+    ) AS products
+  FROM vouchers v
+  LEFT JOIN voucher_products vp ON vp.voucher_id = v.id
+  LEFT JOIN products p ON p.id = vp.product_id
+  GROUP BY v.id
+  ORDER BY v.created_at DESC
+`.catch(() => [])) as any[];
+
+const products = (await sql`SELECT id, name FROM products WHERE is_available = TRUE ORDER BY name`.catch(() => [])) as any[];
+
+const fmt = (p: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
+---
+
+<AdminLayout title="Voucher - PusatMLBB">
+  <div class="max-w-5xl space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-black text-white">Voucher Diskon</h1>
+        <p class="text-muted text-sm mt-0.5">Generate & kelola kode voucher untuk customer</p>
+      </div>
+      <button
+        id="btn-open-modal"
+        class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl text-sm transition-colors"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Buat Voucher
+      </button>
+    </div>
+
+    <!-- Voucher Table -->
+    <div class="bg-surface border border-border rounded-2xl overflow-hidden">
+      {vouchers.length === 0 ? (
+        <div class="text-center py-16 text-muted text-sm">Belum ada voucher. Buat voucher pertama kamu.</div>
+      ) : (
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border text-muted text-xs uppercase tracking-wide">
+                <th class="text-left px-5 py-3 font-medium">Kode</th>
+                <th class="text-left px-5 py-3 font-medium">Diskon</th>
+                <th class="text-left px-5 py-3 font-medium">Berlaku Untuk</th>
+                <th class="text-left px-5 py-3 font-medium">Pemakaian</th>
+                <th class="text-left px-5 py-3 font-medium">Kadaluarsa</th>
+                <th class="text-left px-5 py-3 font-medium">Status</th>
+                <th class="px-5 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {vouchers.map((v: any) => (
+                <tr class="border-b border-border last:border-0 hover:bg-surface-2 transition-colors">
+                  <td class="px-5 py-3">
+                    <span class="font-mono font-bold text-brand tracking-widest text-sm bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-lg">{v.code}</span>
+                  </td>
+                  <td class="px-5 py-3 font-semibold text-white">
+                    {v.discount_type === 'percent'
+                      ? `${v.discount_value}%`
+                      : fmt(v.discount_value)}
+                  </td>
+                  <td class="px-5 py-3 text-muted max-w-[180px]">
+                    {v.applies_to === 'all'
+                      ? <span class="text-white">Semua Produk</span>
+                      : <span class="text-xs">{(v.products as any[]).map((p: any) => p.name).join(', ') || '-'}</span>
+                    }
+                  </td>
+                  <td class="px-5 py-3 text-muted">
+                    {v.used_count}{v.max_uses ? `/${v.max_uses}` : ''}
+                  </td>
+                  <td class="px-5 py-3 text-muted text-xs">
+                    {v.expires_at
+                      ? new Date(v.expires_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : <span class="text-green-400">Tidak ada</span>}
+                  </td>
+                  <td class="px-5 py-3">
+                    <button
+                      class="voucher-toggle text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors"
+                      data-id={v.id}
+                      data-active={String(v.is_active)}
+                      class:list={[
+                        v.is_active
+                          ? 'bg-green-400/10 border-green-400/20 text-green-400 hover:bg-red-400/10 hover:border-red-400/20 hover:text-red-400'
+                          : 'bg-red-400/10 border-red-400/20 text-red-400 hover:bg-green-400/10 hover:border-green-400/20 hover:text-green-400'
+                      ]}
+                    >
+                      {v.is_active ? 'Aktif' : 'Nonaktif'}
+                    </button>
+                  </td>
+                  <td class="px-5 py-3">
+                    <button
+                      class="voucher-delete text-muted hover:text-red-400 transition-colors"
+                      data-id={v.id}
+                      title="Hapus voucher"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </div>
+
+  <!-- ── CREATE VOUCHER MODAL ── -->
+  <div id="voucher-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="modal-backdrop"></div>
+    <div class="relative bg-surface border border-border rounded-2xl w-full max-w-lg shadow-2xl">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+        <h2 class="font-bold text-white">Buat Voucher Baru</h2>
+        <button id="btn-close-modal" class="text-muted hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="px-6 py-5 space-y-4">
+        <div id="modal-error" class="hidden p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"></div>
+
+        <!-- Kode -->
+        <div>
+          <label class="block text-xs font-medium text-white mb-1.5">Kode Voucher <span class="text-brand">*</span></label>
+          <div class="flex gap-2">
+            <input
+              type="text" id="v-code" placeholder="CONTOH: HOKI10"
+              class="flex-1 bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 uppercase"
+            />
+            <button
+              id="btn-generate-code"
+              class="px-3 py-2.5 bg-surface-2 hover:bg-surface-3 border border-border rounded-xl text-muted hover:text-white text-xs font-medium transition-colors whitespace-nowrap"
+            >Auto Generate</button>
+          </div>
+          <p class="text-muted text-xs mt-1">Huruf kapital, angka, _ dan - (3-30 karakter)</p>
+        </div>
+
+        <!-- Tipe & Nilai Diskon -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-white mb-1.5">Tipe Diskon <span class="text-brand">*</span></label>
+            <select id="v-type" class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand/50">
+              <option value="percent">Persen (%)</option>
+              <option value="fixed">Nominal (Rp)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-white mb-1.5">Nilai Diskon <span class="text-brand">*</span></label>
+            <input
+              type="number" id="v-value" min="1" placeholder="10"
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50"
+            />
+          </div>
+        </div>
+
+        <!-- Max Uses & Expires -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-white mb-1.5">Maks Pemakaian</label>
+            <input
+              type="number" id="v-max-uses" min="1" placeholder="Kosong = unlimited"
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-white mb-1.5">Kadaluarsa</label>
+            <input
+              type="datetime-local" id="v-expires"
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand/50"
+            />
+          </div>
+        </div>
+
+        <!-- Berlaku Untuk -->
+        <div>
+          <label class="block text-xs font-medium text-white mb-1.5">Berlaku Untuk</label>
+          <select id="v-applies" class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand/50">
+            <option value="all">Semua Produk</option>
+            <option value="specific">Produk Tertentu</option>
+          </select>
+        </div>
+
+        <!-- Product Picker (shown when specific) -->
+        <div id="product-picker" class="hidden">
+          <label class="block text-xs font-medium text-white mb-1.5">Pilih Produk</label>
+          <div class="bg-bg border border-border rounded-xl p-3 max-h-40 overflow-y-auto space-y-1.5">
+            {products.map((p: any) => (
+              <label class="flex items-center gap-2.5 cursor-pointer group">
+                <input type="checkbox" name="product_ids" value={p.id}
+                  class="w-4 h-4 rounded border-border bg-bg accent-brand cursor-pointer" />
+                <span class="text-sm text-white group-hover:text-brand transition-colors">{p.name}</span>
+              </label>
+            ))}
+            {products.length === 0 && <p class="text-muted text-xs">Tidak ada produk tersedia</p>}
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 border-t border-border flex justify-end gap-3">
+        <button id="btn-cancel" class="px-4 py-2 border border-border rounded-xl text-muted hover:text-white text-sm transition-colors">Batal</button>
+        <button
+          id="btn-save-voucher"
+          class="px-5 py-2 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >Simpan Voucher</button>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  // ── Modal ──────────────────────────────────────────────────────────
+  const modal = document.getElementById('voucher-modal')!;
+  const openModal = () => { modal.classList.remove('hidden'); modal.classList.add('flex'); };
+  const closeModal = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+  document.getElementById('btn-open-modal')!.addEventListener('click', openModal);
+  document.getElementById('btn-close-modal')!.addEventListener('click', closeModal);
+  document.getElementById('btn-cancel')!.addEventListener('click', closeModal);
+  document.getElementById('modal-backdrop')!.addEventListener('click', closeModal);
+
+  // ── Auto Generate Code ─────────────────────────────────────────────
+  document.getElementById('btn-generate-code')!.addEventListener('click', () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const code = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    (document.getElementById('v-code') as HTMLInputElement).value = code;
+  });
+
+  // ── Uppercase code input ───────────────────────────────────────────
+  document.getElementById('v-code')!.addEventListener('input', (e) => {
+    const el = e.target as HTMLInputElement;
+    el.value = el.value.toUpperCase();
+  });
+
+  // ── Show/hide product picker ────────────────────────────────────────
+  document.getElementById('v-applies')!.addEventListener('change', (e) => {
+    const val = (e.target as HTMLSelectElement).value;
+    const picker = document.getElementById('product-picker')!;
+    val === 'specific' ? picker.classList.remove('hidden') : picker.classList.add('hidden');
+  });
+
+  // ── Save Voucher ───────────────────────────────────────────────────
+  document.getElementById('btn-save-voucher')!.addEventListener('click', async () => {
+    const code = (document.getElementById('v-code') as HTMLInputElement).value.trim();
+    const discount_type = (document.getElementById('v-type') as HTMLSelectElement).value;
+    const discount_value = parseInt((document.getElementById('v-value') as HTMLInputElement).value);
+    const max_uses = (document.getElementById('v-max-uses') as HTMLInputElement).value;
+    const expires_at = (document.getElementById('v-expires') as HTMLInputElement).value;
+    const applies_to = (document.getElementById('v-applies') as HTMLSelectElement).value;
+    const product_ids = Array.from(
+      document.querySelectorAll<HTMLInputElement>('input[name="product_ids"]:checked')
+    ).map(el => el.value);
+
+    const errorEl = document.getElementById('modal-error')!;
+    const saveBtn = document.getElementById('btn-save-voucher') as HTMLButtonElement;
+
+    if (!code || !discount_value) {
+      errorEl.textContent = 'Kode dan nilai diskon wajib diisi';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+    if (discount_type === 'percent' && (discount_value < 1 || discount_value > 100)) {
+      errorEl.textContent = 'Diskon persen harus antara 1-100';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    saveBtn.disabled = true;
+    errorEl.classList.add('hidden');
+
+    try {
+      const res = await fetch('/api/admin/vouchers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          discount_type,
+          discount_value,
+          max_uses: max_uses || null,
+          applies_to,
+          product_ids,
+          expires_at: expires_at || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      window.location.reload();
+    } catch (err) {
+      errorEl.textContent = (err as Error).message;
+      errorEl.classList.remove('hidden');
+      saveBtn.disabled = false;
+    }
+  });
+
+  // ── Toggle Active ──────────────────────────────────────────────────
+  document.querySelectorAll<HTMLButtonElement>('.voucher-toggle').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id!;
+      const isActive = btn.dataset.active === 'true';
+      btn.disabled = true;
+      try {
+        await fetch(`/api/admin/vouchers/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_active: !isActive }),
+        });
+        window.location.reload();
+      } catch { btn.disabled = false; }
+    });
+  });
+
+  // ── Delete Voucher ─────────────────────────────────────────────────
+  document.querySelectorAll<HTMLButtonElement>('.voucher-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Hapus voucher ini?')) return;
+      const id = btn.dataset.id!;
+      btn.disabled = true;
+      try {
+        await fetch(`/api/admin/vouchers/${id}`, { method: 'DELETE' });
+        window.location.reload();
+      } catch { btn.disabled = false; }
+    });
+  });
+</script>
