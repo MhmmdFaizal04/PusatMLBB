@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { sql } from '../../../../lib/db';
+import { sql } from '../../../lib/db';
 
 const VALID_DURATIONS = ['3d', '7d', '30d', 'permanent'] as const;
 type Duration = (typeof VALID_DURATIONS)[number];
