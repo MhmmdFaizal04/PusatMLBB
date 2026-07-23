@@ -1,0 +1,240 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { sql } from '../../lib/db';
+
+const codes = (await sql`
+  SELECT code, duration, used, used_by, used_at, created_at
+  FROM redeem_codes
+  ORDER BY created_at DESC
+  LIMIT 200
+`.catch(() => [])) as any[];
+
+const durationLabel: Record<string, string> = {
+  '3d': '3 Hari',
+  '7d': '7 Hari',
+  '30d': '1 Bulan',
+  'permanent': 'Permanent',
+};
+---
+
+<AdminLayout title="Redeem Code - PusatMLBB">
+  <div class="max-w-5xl space-y-6">
+
+    <!-- Header -->
+    <div>
+      <h1 class="text-xl font-black text-white">Generate Redeem Code</h1>
+      <p class="text-muted text-sm mt-0.5">Buat kode redeem VIP untuk pengguna Android</p>
+    </div>
+
+    <!-- Generator Card -->
+    <div class="bg-surface border border-border rounded-2xl p-6 space-y-5">
+      <h2 class="font-bold text-white text-sm">Generate Kode Baru</h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- Duration -->
+        <div>
+          <label class="block text-xs font-medium text-white mb-1.5">Durasi VIP</label>
+          <select
+            id="sel-duration"
+            class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand/50"
+          >
+            <option value="3d">3 Hari</option>
+            <option value="7d">7 Hari</option>
+            <option value="30d" selected>1 Bulan</option>
+            <option value="permanent">Permanent</option>
+          </select>
+        </div>
+
+        <!-- Quantity -->
+        <div>
+          <label class="block text-xs font-medium text-white mb-1.5">Jumlah Kode (1–50)</label>
+          <input
+            type="number" id="inp-qty" min="1" max="50" value="1"
+            class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand/50"
+          />
+        </div>
+
+        <!-- Action -->
+        <div class="flex items-end">
+          <button
+            id="btn-generate"
+            class="w-full py-2.5 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            Generate
+          </button>
+        </div>
+      </div>
+
+      <!-- Error / result area -->
+      <div id="gen-error" class="hidden p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm"></div>
+
+      <!-- Generated codes result -->
+      <div id="result-section" class="hidden">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-sm font-semibold text-white">Kode Berhasil Dibuat</p>
+          <button
+            id="btn-copy-all"
+            class="text-xs text-brand hover:text-brand-hover font-medium transition-colors"
+          >Salin Semua</button>
+        </div>
+        <div
+          id="code-list"
+          class="bg-bg border border-border rounded-xl p-4 font-mono text-sm text-white leading-7 max-h-60 overflow-y-auto break-all whitespace-pre-wrap"
+        ></div>
+        <p class="text-xs text-muted mt-2">Halaman akan di-refresh otomatis dalam <span id="refresh-countdown">5</span> detik…</p>
+      </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="bg-surface border border-border rounded-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-border flex items-center justify-between">
+        <h2 class="font-bold text-white text-sm">Riwayat Kode (<span id="code-count">{codes.length}</span>)</h2>
+        <button
+          id="btn-refresh"
+          class="text-xs text-muted hover:text-white transition-colors flex items-center gap-1"
+          title="Refresh tabel"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Refresh
+        </button>
+      </div>
+
+      {codes.length === 0 ? (
+        <div class="text-center py-16 text-muted text-sm">Belum ada kode yang dibuat.</div>
+      ) : (
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border text-muted text-xs uppercase tracking-wide">
+                <th class="text-left px-5 py-3 font-medium">Kode</th>
+                <th class="text-left px-5 py-3 font-medium">Durasi</th>
+                <th class="text-left px-5 py-3 font-medium">Status</th>
+                <th class="text-left px-5 py-3 font-medium">Dipakai Oleh</th>
+                <th class="text-left px-5 py-3 font-medium">Tanggal Dibuat</th>
+                <th class="text-left px-5 py-3 font-medium">Tanggal Dipakai</th>
+              </tr>
+            </thead>
+            <tbody>
+              {codes.map((c: any) => (
+                <tr class="border-b border-border last:border-0 hover:bg-surface-2 transition-colors">
+                  <!-- Code -->
+                  <td class="px-5 py-3">
+                    <span class="font-mono font-bold text-brand tracking-widest text-xs bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-lg">
+                      {c.code}
+                    </span>
+                  </td>
+                  <!-- Duration -->
+                  <td class="px-5 py-3 text-white text-xs font-medium">
+                    {durationLabel[c.duration] ?? c.duration}
+                  </td>
+                  <!-- Status -->
+                  <td class="px-5 py-3">
+                    {c.used ? (
+                      <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-400/10 border border-red-400/20 text-red-400">
+                        Sudah Dipakai
+                      </span>
+                    ) : (
+                      <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-400/10 border border-green-400/20 text-green-400">
+                        Belum Dipakai
+                      </span>
+                    )}
+                  </td>
+                  <!-- Used by -->
+                  <td class="px-5 py-3 text-muted text-xs font-mono max-w-[160px] truncate" title={c.used_by ?? ''}>
+                    {c.used_by ?? <span class="text-muted/40">—</span>}
+                  </td>
+                  <!-- Created at -->
+                  <td class="px-5 py-3 text-muted text-xs">
+                    {new Date(c.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <!-- Used at -->
+                  <td class="px-5 py-3 text-muted text-xs">
+                    {c.used_at
+                      ? new Date(c.used_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                      : <span class="text-muted/40">—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+
+  </div>
+</AdminLayout>
+
+<script>
+  const btnGenerate = document.getElementById('btn-generate') as HTMLButtonElement;
+  const selDuration = document.getElementById('sel-duration') as HTMLSelectElement;
+  const inpQty = document.getElementById('inp-qty') as HTMLInputElement;
+  const genError = document.getElementById('gen-error')!;
+  const resultSection = document.getElementById('result-section')!;
+  const codeList = document.getElementById('code-list')!;
+  const btnCopyAll = document.getElementById('btn-copy-all')!;
+  const refreshCountdown = document.getElementById('refresh-countdown')!;
+  const btnRefresh = document.getElementById('btn-refresh')!;
+
+  btnRefresh.addEventListener('click', () => window.location.reload());
+
+  btnGenerate.addEventListener('click', async () => {
+    genError.classList.add('hidden');
+    resultSection.classList.add('hidden');
+
+    const duration = selDuration.value;
+    const quantity = parseInt(inpQty.value);
+
+    if (!quantity || quantity < 1 || quantity > 50) {
+      genError.textContent = 'Jumlah kode harus antara 1 sampai 50.';
+      genError.classList.remove('hidden');
+      return;
+    }
+
+    btnGenerate.disabled = true;
+    btnGenerate.textContent = 'Generating…';
+
+    try {
+      const res = await fetch('/api/admin/generate-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duration, quantity }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error ?? 'Terjadi kesalahan');
+
+      const codes: string[] = data.codes;
+      codeList.textContent = codes.join('\n');
+      resultSection.classList.remove('hidden');
+
+      // Auto-refresh countdown
+      let secs = 5;
+      refreshCountdown.textContent = String(secs);
+      const iv = setInterval(() => {
+        secs--;
+        refreshCountdown.textContent = String(secs);
+        if (secs <= 0) { clearInterval(iv); window.location.reload(); }
+      }, 1000);
+    } catch (err) {
+      genError.textContent = (err as Error).message;
+      genError.classList.remove('hidden');
+    } finally {
+      btnGenerate.disabled = false;
+      btnGenerate.textContent = 'Generate';
+    }
+  });
+
+  btnCopyAll.addEventListener('click', async () => {
+    const text = codeList.textContent ?? '';
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      btnCopyAll.textContent = 'Tersalin!';
+      setTimeout(() => { btnCopyAll.textContent = 'Salin Semua'; }, 2000);
+    } catch {
+      btnCopyAll.textContent = 'Gagal salin';
+    }
+  });
+</script>
