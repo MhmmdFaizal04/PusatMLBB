@@ -1,0 +1,316 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { sql } from '../../lib/db';
+
+const rows = await sql`
+  SELECT force_update, latest_version, min_version, download_url, message, updated_at
+  FROM app_version ORDER BY id DESC LIMIT 1
+`.catch(() => []);
+
+const current = rows[0] ?? {
+  force_update: false,
+  latest_version: '1.0',
+  min_version: '1.0',
+  download_url: '',
+  message: 'Aplikasi sudah versi terbaru',
+  updated_at: null,
+};
+---
+
+<AdminLayout title="Versi Aplikasi - PusatMLBB">
+  <div class="max-w-2xl space-y-6">
+
+    <!-- Header -->
+    <div>
+      <h1 class="text-xl font-black text-white">Manajemen Versi Aplikasi</h1>
+      <p class="text-muted text-sm mt-0.5">Atur versi & notifikasi update untuk pengguna Android</p>
+    </div>
+
+    <!-- Status Badge -->
+    <div
+      id="status-badge"
+      class={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
+        current.force_update
+          ? 'bg-red-500/10 border-red-500/30 text-red-400'
+          : 'bg-green-500/10 border-green-500/30 text-green-400'
+      }`}
+      data-force={String(current.force_update)}
+    >
+      <span
+        id="badge-dot"
+        class={`w-2 h-2 rounded-full ${current.force_update ? 'bg-red-400 animate-pulse' : 'bg-green-400'}`}
+      ></span>
+      <span id="badge-text">
+        Force Update: {current.force_update ? 'AKTIF' : 'NONAKTIF'}
+      </span>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-surface border border-border rounded-2xl p-6 space-y-5">
+
+      <!-- Error / Success -->
+      <div id="msg-error" class="hidden p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm"></div>
+      <div id="msg-success" class="hidden p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm"></div>
+
+      <!-- Force Update Toggle -->
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex-1">
+          <label class="block text-sm font-semibold text-white mb-0.5">Force Update</label>
+          <p class="text-xs text-muted">
+            Aktifkan untuk memblokir semua user di bawah versi minimum hingga mereka update.
+          </p>
+          <div id="force-warning" class={`mt-2 p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs flex items-start gap-2 ${current.force_update ? '' : 'hidden'}`}>
+            <svg class="w-3.5 h-3.5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span>Force Update aktif! Semua user dengan versi di bawah minimum akan diblokir.</span>
+          </div>
+        </div>
+        <!-- Toggle switch -->
+        <button
+          type="button"
+          id="toggle-force"
+          role="switch"
+          aria-checked={current.force_update as boolean}
+          class={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${current.force_update ? 'bg-red-500' : 'bg-surface-3'}`}
+        >
+          <span
+            id="toggle-thumb"
+            class={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition duration-200 ${current.force_update ? 'translate-x-5' : 'translate-x-0'}`}
+          ></span>
+        </button>
+        <input type="hidden" id="inp-force" value={String(current.force_update)} />
+      </div>
+
+      <hr class="border-border" />
+
+      <!-- Version Fields -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-white mb-1.5" for="inp-latest">
+            Versi Terbaru <span class="text-brand">*</span>
+          </label>
+          <input
+            type="text" id="inp-latest"
+            value={current.latest_version}
+            placeholder="contoh: 4.2"
+            class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50"
+          />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-white mb-1.5" for="inp-min">
+            Versi Minimum <span class="text-brand">*</span>
+            <span class="ml-1 text-muted font-normal" title="User dengan versi di bawah ini akan diblokir">ⓘ</span>
+          </label>
+          <input
+            type="text" id="inp-min"
+            value={current.min_version}
+            placeholder="contoh: 4.1"
+            class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50"
+          />
+          <p class="text-muted text-xs mt-1">User dengan versi di bawah ini akan diblokir</p>
+        </div>
+      </div>
+
+      <!-- Download URL -->
+      <div>
+        <label class="block text-xs font-medium text-white mb-1.5" for="inp-url">
+          Link Download APK
+          <span id="url-required-badge" class={`ml-1 text-red-400 text-xs ${current.force_update ? '' : 'hidden'}`}>* (wajib saat force update aktif)</span>
+        </label>
+        <input
+          type="url" id="inp-url"
+          value={current.download_url}
+          placeholder="https://example.com/app.apk"
+          class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50"
+        />
+      </div>
+
+      <!-- Message -->
+      <div>
+        <label class="block text-xs font-medium text-white mb-1.5" for="inp-message">
+          Pesan untuk User <span class="text-brand">*</span>
+        </label>
+        <textarea
+          id="inp-message"
+          rows="3"
+          placeholder="Tersedia versi terbaru!"
+          class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 resize-none"
+        >{current.message}</textarea>
+      </div>
+
+      <!-- Save Button -->
+      <button
+        id="btn-save"
+        class="w-full py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        Simpan Pengaturan
+      </button>
+
+      {current.updated_at && (
+        <p class="text-center text-xs text-muted">
+          Terakhir diupdate: {new Date(current.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+        </p>
+      )}
+    </div>
+
+    <!-- Preview Card -->
+    <div class="bg-surface border border-border rounded-2xl p-6 space-y-3">
+      <h2 class="text-sm font-bold text-white">Preview Notifikasi di Aplikasi</h2>
+      <div id="preview-card" class="bg-bg border border-border rounded-xl p-4 space-y-3">
+        <!-- Force update screen mock -->
+        <div id="preview-force" class={`space-y-2 ${current.force_update ? '' : 'hidden'}`}>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
+            <span class="text-xs font-bold text-red-400 uppercase tracking-wide">Update Wajib</span>
+          </div>
+          <p id="prev-message-force" class="text-sm text-white font-medium">{current.message}</p>
+          <div class="text-xs text-muted space-y-0.5">
+            <p>Versi kamu: <span class="text-white">X.X</span></p>
+            <p>Versi terbaru: <span id="prev-latest-force" class="text-brand">{current.latest_version}</span></p>
+          </div>
+          <button class="w-full mt-2 py-2 bg-brand text-white text-xs font-bold rounded-lg">Update Sekarang</button>
+        </div>
+        <!-- Normal / optional update mock -->
+        <div id="preview-normal" class={`space-y-2 ${current.force_update ? 'hidden' : ''}`}>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-green-400"></span>
+            <span class="text-xs font-bold text-green-400 uppercase tracking-wide">Berjalan Normal</span>
+          </div>
+          <p id="prev-message-normal" class="text-sm text-white">{current.message}</p>
+          <div class="text-xs text-muted">
+            Versi terbaru tersedia: <span id="prev-latest-normal" class="text-brand">{current.latest_version}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</AdminLayout>
+
+<script>
+  // ── Toggle Force Update ─────────────────────────────────────────────
+  const toggleBtn = document.getElementById('toggle-force') as HTMLButtonElement;
+  const toggleThumb = document.getElementById('toggle-thumb') as HTMLSpanElement;
+  const inpForce = document.getElementById('inp-force') as HTMLInputElement;
+  const forceWarning = document.getElementById('force-warning')!;
+  const badgeEl = document.getElementById('status-badge')!;
+  const badgeDot = document.getElementById('badge-dot')!;
+  const badgeText = document.getElementById('badge-text')!;
+  const urlRequiredBadge = document.getElementById('url-required-badge')!;
+  const previewForce = document.getElementById('preview-force')!;
+  const previewNormal = document.getElementById('preview-normal')!;
+
+  function setForce(active: boolean) {
+    inpForce.value = String(active);
+    toggleBtn.setAttribute('aria-checked', String(active));
+
+    if (active) {
+      toggleBtn.classList.remove('bg-surface-3');
+      toggleBtn.classList.add('bg-red-500');
+      toggleThumb.classList.remove('translate-x-0');
+      toggleThumb.classList.add('translate-x-5');
+      forceWarning.classList.remove('hidden');
+      urlRequiredBadge.classList.remove('hidden');
+      // badge
+      badgeEl.className = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border bg-red-500/10 border-red-500/30 text-red-400';
+      badgeDot.className = 'w-2 h-2 rounded-full bg-red-400 animate-pulse';
+      badgeText.textContent = 'Force Update: AKTIF';
+      // preview
+      previewForce.classList.remove('hidden');
+      previewNormal.classList.add('hidden');
+    } else {
+      toggleBtn.classList.remove('bg-red-500');
+      toggleBtn.classList.add('bg-surface-3');
+      toggleThumb.classList.remove('translate-x-5');
+      toggleThumb.classList.add('translate-x-0');
+      forceWarning.classList.add('hidden');
+      urlRequiredBadge.classList.add('hidden');
+      // badge
+      badgeEl.className = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border bg-green-500/10 border-green-500/30 text-green-400';
+      badgeDot.className = 'w-2 h-2 rounded-full bg-green-400';
+      badgeText.textContent = 'Force Update: NONAKTIF';
+      // preview
+      previewForce.classList.add('hidden');
+      previewNormal.classList.remove('hidden');
+    }
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    setForce(inpForce.value !== 'true');
+  });
+
+  // ── Live preview update ─────────────────────────────────────────────
+  const inpLatest = document.getElementById('inp-latest') as HTMLInputElement;
+  const inpMessage = document.getElementById('inp-message') as HTMLTextAreaElement;
+
+  function syncPreview() {
+    const v = inpLatest.value || '—';
+    const m = inpMessage.value || '—';
+    document.getElementById('prev-latest-force')!.textContent = v;
+    document.getElementById('prev-latest-normal')!.textContent = v;
+    document.getElementById('prev-message-force')!.textContent = m;
+    document.getElementById('prev-message-normal')!.textContent = m;
+  }
+
+  inpLatest.addEventListener('input', syncPreview);
+  inpMessage.addEventListener('input', syncPreview);
+
+  // ── Save ───────────────────────────────────────────────────────────
+  const btnSave = document.getElementById('btn-save') as HTMLButtonElement;
+  const inpMin = document.getElementById('inp-min') as HTMLInputElement;
+  const inpUrl = document.getElementById('inp-url') as HTMLInputElement;
+  const msgError = document.getElementById('msg-error')!;
+  const msgSuccess = document.getElementById('msg-success')!;
+
+  btnSave.addEventListener('click', async () => {
+    msgError.classList.add('hidden');
+    msgSuccess.classList.add('hidden');
+
+    const forceUpdate = inpForce.value === 'true';
+    const latestVersion = inpLatest.value.trim();
+    const minVersion = inpMin.value.trim();
+    const downloadUrl = inpUrl.value.trim();
+    const message = inpMessage.value.trim();
+
+    // Client-side validation
+    if (!latestVersion || !minVersion || !message) {
+      msgError.textContent = 'Versi terbaru, versi minimum, dan pesan wajib diisi.';
+      msgError.classList.remove('hidden');
+      return;
+    }
+    if (forceUpdate && !downloadUrl) {
+      msgError.textContent = 'Link download APK wajib diisi saat Force Update aktif.';
+      msgError.classList.remove('hidden');
+      return;
+    }
+    if (downloadUrl && !downloadUrl.startsWith('https://')) {
+      msgError.textContent = 'Link download harus menggunakan HTTPS.';
+      msgError.classList.remove('hidden');
+      return;
+    }
+
+    btnSave.disabled = true;
+    btnSave.textContent = 'Menyimpan…';
+
+    try {
+      const res = await fetch('/api/admin/app-version', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ forceUpdate, latestVersion, minVersion, downloadUrl, message }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Terjadi kesalahan');
+
+      msgSuccess.textContent = 'Pengaturan berhasil disimpan!';
+      msgSuccess.classList.remove('hidden');
+      msgSuccess.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (err) {
+      msgError.textContent = (err as Error).message;
+      msgError.classList.remove('hidden');
+    } finally {
+      btnSave.disabled = false;
+      btnSave.textContent = 'Simpan Pengaturan';
+    }
+  });
+</script>
