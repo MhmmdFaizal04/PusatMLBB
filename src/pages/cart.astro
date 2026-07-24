@@ -4,13 +4,20 @@ import { sql } from '../lib/db';
 
 const user = Astro.locals.user!;
 const cartItems = (await sql`
-  SELECT ci.id, ci.quantity,
-         p.id AS product_id, p.name, p.price, p.image_url, p.stock, p.is_available
+  SELECT ci.id, ci.quantity, ci.cheat_duration,
+         p.id AS product_id, p.name, p.image_url, p.stock, p.is_available,
+         COALESCE(cap.price, p.price) AS price
   FROM cart_items ci
   JOIN products p ON p.id = ci.product_id
+  LEFT JOIN cheat_app_prices cap
+    ON cap.product_id = p.id AND cap.duration = ci.cheat_duration
   WHERE ci.user_id = ${user.userId}
   ORDER BY ci.id
 `.catch(() => [])) as any[];
+
+const DURATION_LABELS: Record<string, string> = {
+  '3d': '3 Hari', '7d': '7 Hari', '30d': '1 Bulan', 'permanent': 'Permanent',
+};
 
 const total = cartItems.reduce(
   (s: number, i: any) => s + i.price * i.quantity, 0
@@ -49,6 +56,11 @@ const fmt = (p: number) =>
               </div>
               <div class="flex-1 min-w-0">
                 <p class="font-semibold text-white text-sm truncate">{item.name}</p>
+                {item.cheat_duration && (
+                  <p class="text-[11px] text-brand font-medium mt-0.5">
+                    {DURATION_LABELS[item.cheat_duration] ?? item.cheat_duration}
+                  </p>
+                )}
                 <p class="text-brand font-bold text-sm mt-0.5">{fmt(item.price)}</p>
                 {(!item.is_available || item.stock < 1) && (
                   <p class="text-xs text-red-400 mt-0.5">Stok habis</p>

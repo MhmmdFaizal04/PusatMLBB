@@ -13,6 +13,19 @@ const rows = await sql`
 if (!rows.length) return Astro.redirect('/products');
 const p = rows[0];
 
+// Fetch cheat app prices if this is a Cheat App product
+const isCheatApp = p.category_slug === 'cheat-app';
+const cheatPrices = isCheatApp
+  ? ((await sql`SELECT duration, price FROM cheat_app_prices WHERE product_id = ${id!} AND price > 0 ORDER BY price ASC`.catch(() => [])) as any[])
+  : [];
+
+const DURATION_LABELS: Record<string, string> = {
+  '3d': '3 Hari',
+  '7d': '7 Hari',
+  '30d': '1 Bulan',
+  'permanent': 'Permanent',
+};
+
 const fmt = (price: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(price);
 
@@ -82,16 +95,41 @@ const user = Astro.locals.user;
         )}
 
         <div class="flex items-center gap-3">
-          <span class="text-3xl font-black text-brand">{fmt(p.price)}</span>
+          {isCheatApp && cheatPrices.length > 0 ? (
+            <span id="price-display" class="text-3xl font-black text-brand">{fmt(cheatPrices[0].price)}</span>
+          ) : (
+            <span class="text-3xl font-black text-brand">{fmt(p.price)}</span>
+          )}
           {p.stock > 0 && p.is_available ? (
             <div class="flex flex-col gap-0.5">
               <span class="text-xs font-semibold bg-green-400/10 text-green-400 px-2.5 py-1 rounded-full border border-green-400/20">Tersedia</span>
-              <span class="text-[11px] text-muted text-center">Sisa {p.stock} item</span>
+              {!isCheatApp && <span class="text-[11px] text-muted text-center">Sisa {p.stock} item</span>}
             </div>
           ) : (
             <span class="text-xs font-semibold bg-red-500/10 text-red-400 px-2.5 py-1 rounded-full border border-red-500/20">Stok Habis</span>
           )}
         </div>
+
+        {/* Duration picker for Cheat App */}
+        {isCheatApp && cheatPrices.length > 0 && (
+          <div class="space-y-2">
+            <p class="text-xs font-semibold text-white">Pilih Durasi Akses:</p>
+            <div class="grid grid-cols-2 gap-2">
+              {cheatPrices.map((cp: any, i: number) => (
+                <button
+                  type="button"
+                  class={`duration-btn border rounded-xl px-3 py-2.5 text-left transition-all ${i === 0 ? 'border-brand bg-brand/10 text-white' : 'border-border bg-surface-2 text-muted hover:border-brand/50 hover:text-white'}`}
+                  data-duration={cp.duration}
+                  data-price={cp.price}
+                >
+                  <div class="text-sm font-bold">{DURATION_LABELS[cp.duration] ?? cp.duration}</div>
+                  <div class="text-xs mt-0.5 text-brand font-semibold">{fmt(cp.price)}</div>
+                </button>
+              ))}
+            </div>
+            <input type="hidden" id="selected-duration" value={cheatPrices[0].duration} />
+          </div>
+        )}
 
         <div class="flex flex-col gap-3 pt-2">
           {p.is_available && p.stock > 0 ? (
@@ -140,19 +178,47 @@ const user = Astro.locals.user;
   </div>
 
   <script>
-    const msg = document.getElementById('cart-msg')!;
+    const msg = document.getElementById('cart-msg') as HTMLElement | null;
+    const selectedDurationInput = document.getElementById('selected-duration') as HTMLInputElement | null;
+    const priceDisplay = document.getElementById('price-display');
+    const buyBtn = document.getElementById('buy-now-btn') as HTMLButtonElement | null;
+    const cartBtn = document.getElementById('add-cart-btn') as HTMLButtonElement | null;
+
+    // Duration button selection
+    (Array.from(document.querySelectorAll('.duration-btn')) as HTMLButtonElement[]).forEach((btn) => {
+      btn.addEventListener('click', () => {
+        (Array.from(document.querySelectorAll('.duration-btn')) as HTMLButtonElement[]).forEach((b) => {
+          b.classList.remove('border-brand', 'bg-brand/10', 'text-white');
+          b.classList.add('border-border', 'bg-surface-2', 'text-muted');
+        });
+        btn.classList.add('border-brand', 'bg-brand/10', 'text-white');
+        btn.classList.remove('border-border', 'bg-surface-2', 'text-muted');
+        if (selectedDurationInput && btn.dataset.duration) selectedDurationInput.value = btn.dataset.duration;
+        if (priceDisplay && btn.dataset.price) {
+          priceDisplay.textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(btn.dataset.price));
+        }
+      });
+    });
 
     async function addToCart(productId: string): Promise<boolean> {
+      const cheatDuration = selectedDurationInput ? selectedDurationInput.value || null : null;
       const res = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, quantity: 1 }),
+        body: JSON.stringify({ productId, quantity: 1, cheatDuration }),
       });
       return res.ok;
     }
 
-    // Beli Langsung
-    const buyBtn = document.getElementById('buy-now-btn') as HTMLButtonElement | null;
+    function showMsg(text: string, ok: boolean) {
+      if (!msg) return;
+      msg.textContent = text;
+      msg.className = ok
+        ? 'text-sm text-center py-2 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20'
+        : 'text-sm text-center py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20';
+      msg.classList.remove('hidden');
+    }
+
     buyBtn?.addEventListener('click', async () => {
       buyBtn.disabled = true;
       buyBtn.textContent = 'Memproses...';
@@ -161,39 +227,25 @@ const user = Astro.locals.user;
         if (ok) {
           window.location.href = '/checkout';
         } else {
-          msg.textContent = 'Gagal memproses. Coba lagi.';
-          msg.className = 'text-sm text-center py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20';
-          msg.classList.remove('hidden');
+          showMsg('Gagal memproses. Coba lagi.', false);
           buyBtn.disabled = false;
           buyBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Beli Langsung';
         }
       } catch {
-        msg.textContent = 'Terjadi kesalahan';
-        msg.className = 'text-sm text-center py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20';
-        msg.classList.remove('hidden');
+        showMsg('Terjadi kesalahan', false);
         buyBtn.disabled = false;
       }
     });
 
-    // Tambah ke Keranjang
-    const cartBtn = document.getElementById('add-cart-btn') as HTMLButtonElement | null;
     cartBtn?.addEventListener('click', async () => {
       cartBtn.disabled = true;
       cartBtn.textContent = 'Menambahkan...';
       try {
         const ok = await addToCart(cartBtn.dataset.id!);
-        if (ok) {
-          msg.textContent = 'Berhasil ditambahkan ke keranjang!';
-          msg.className = 'text-sm text-center py-2 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20';
-        } else {
-          msg.textContent = 'Gagal menambahkan ke keranjang';
-          msg.className = 'text-sm text-center py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20';
-        }
+        showMsg(ok ? 'Berhasil ditambahkan ke keranjang!' : 'Gagal menambahkan ke keranjang', ok);
       } catch {
-        msg.textContent = 'Terjadi kesalahan';
-        msg.className = 'text-sm text-center py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20';
+        showMsg('Terjadi kesalahan', false);
       } finally {
-        msg.classList.remove('hidden');
         cartBtn.disabled = false;
         cartBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg> Tambah ke Keranjang';
       }

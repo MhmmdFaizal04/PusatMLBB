@@ -55,17 +55,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const categoryId = formData.get('category_id')?.toString() || null;
     const downloadLink = formData.get('download_link')?.toString() || null;
     const isAvailable = formData.get('is_available') === 'true';
-    const cheatDuration = formData.get('cheat_duration')?.toString() || null;
+    const cheatPricesRaw = formData.get('cheat_prices')?.toString() || null;
     const imageFile = formData.get('image') as File | null;
 
-    if (!name || price <= 0) {
-      return new Response(JSON.stringify({ error: 'Nama dan harga wajib diisi' }), {
-        status: 400,
-      });
+    if (!name) {
+      return new Response(JSON.stringify({ error: 'Nama produk wajib diisi' }), { status: 400 });
     }
-
-    const VALID_DURATIONS = ['3d', '7d', '30d', 'permanent'];
-    const validatedDuration = cheatDuration && VALID_DURATIONS.includes(cheatDuration) ? cheatDuration : null;
 
     let imageUrl: string | null = null;
     let imagePublicId: string | null = null;
@@ -79,13 +74,32 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const rows = await sql`
       INSERT INTO products (name, description, price, stock, category_id, download_link,
-                            is_available, image_url, image_public_id, cheat_duration)
+                            is_available, image_url, image_public_id)
       VALUES (${name}, ${description}, ${price}, ${stock}, ${categoryId},
-              ${downloadLink}, ${isAvailable}, ${imageUrl}, ${imagePublicId}, ${validatedDuration})
+              ${downloadLink}, ${isAvailable}, ${imageUrl}, ${imagePublicId})
       RETURNING id
     `;
+    const productId = rows[0].id;
 
-    return new Response(JSON.stringify({ ok: true, id: rows[0].id }), {
+    // Save cheat app prices if provided
+    if (cheatPricesRaw) {
+      const VALID_DURATIONS = ['3d', '7d', '30d', 'permanent'];
+      const prices: Record<string, number> = JSON.parse(cheatPricesRaw);
+      for (const duration of VALID_DURATIONS) {
+        const p = prices[duration] ?? 0;
+        if (p > 0) {
+          await sql`
+            INSERT INTO cheat_app_prices (product_id, duration, price)
+            VALUES (${productId}, ${duration}, ${p})
+            ON CONFLICT (product_id, duration) DO UPDATE SET price = EXCLUDED.price
+          `;
+        } else {
+          await sql`DELETE FROM cheat_app_prices WHERE product_id = ${productId} AND duration = ${duration}`;
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({ ok: true, id: productId }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
     });

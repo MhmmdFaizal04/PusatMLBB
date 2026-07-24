@@ -3,10 +3,15 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { sql } from '../../../lib/db';
 
 const products = await sql`
-  SELECT p.*, c.name AS category_name
+  SELECT p.*, c.name AS category_name, c.slug AS category_slug
   FROM products p LEFT JOIN categories c ON c.id = p.category_id
   ORDER BY p.created_at DESC
 `.catch(() => []);
+
+// Load cheat prices for all products at once
+const allCheatPrices = (await sql`
+  SELECT product_id::text, duration, price FROM cheat_app_prices
+`.catch(() => [])) as any[];
 
 const categories = await sql`SELECT * FROM categories ORDER BY name`.catch(() => []);
 const cheatCat = (categories as any[]).find((c: any) => c.slug === 'cheat-app');
@@ -70,8 +75,10 @@ const fmt = (p: number) =>
                     data-product={JSON.stringify({
                       id: p.id, name: p.name, description: p.description ?? '',
                       price: p.price, stock: p.stock, is_available: p.is_available,
-                      category_id: p.category_id ?? '', download_link: p.download_link ?? '',
-                      image_url: p.image_url ?? '', cheat_duration: p.cheat_duration ?? ''
+                      category_id: p.category_id ?? '', category_slug: p.category_slug ?? '',
+                      download_link: p.download_link ?? '', image_url: p.image_url ?? '',
+                      cheat_duration: p.cheat_duration ?? '',
+                      cheat_prices: allCheatPrices.filter((cp: any) => cp.product_id === p.id)
                     })}
                   >Edit</button>
                   <button
@@ -132,17 +139,37 @@ const fmt = (p: number) =>
               ))}
             </select>
           </div>
-          <!-- Cheat App duration (shown only when Cheat App category selected) -->
-          <div id="f-duration-row" class="col-span-2 hidden">
-            <label class="block text-xs font-medium text-white mb-1">Durasi Akses Cheat <span class="text-brand">*</span></label>
-            <select id="f-duration"
-              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand/50 transition-colors">
-              <option value="3d">3 Hari</option>
-              <option value="7d">7 Hari (1 Minggu)</option>
-              <option value="30d">30 Hari (1 Bulan)</option>
-              <option value="permanent">Permanent</option>
-            </select>
-            <p class="text-muted text-xs mt-1">Durasi VIP yang akan diaktifkan setelah pembelian disetujui.</p>
+          <!-- Cheat App pricing (shown only when Cheat App category selected) -->
+          <div id="f-cheat-section" class="col-span-2 hidden space-y-3">
+            <div class="flex items-center gap-2 pb-1 border-b border-border">
+              <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <label class="text-xs font-semibold text-white">Harga per Durasi Akses <span class="text-brand">*</span></label>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-medium text-muted mb-1">3 Hari</label>
+                <input id="f-price-3d" type="number" min="0" placeholder="contoh: 15000"
+                  class="w-full bg-bg border border-border rounded-xl px-3 py-2 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-medium text-muted mb-1">7 Hari</label>
+                <input id="f-price-7d" type="number" min="0" placeholder="contoh: 25000"
+                  class="w-full bg-bg border border-border rounded-xl px-3 py-2 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-medium text-muted mb-1">1 Bulan</label>
+                <input id="f-price-30d" type="number" min="0" placeholder="contoh: 50000"
+                  class="w-full bg-bg border border-border rounded-xl px-3 py-2 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-medium text-muted mb-1">Permanent</label>
+                <input id="f-price-perm" type="number" min="0" placeholder="contoh: 150000"
+                  class="w-full bg-bg border border-border rounded-xl px-3 py-2 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors" />
+              </div>
+            </div>
+            <p class="text-[11px] text-muted">Isi 0 atau kosong untuk menyembunyikan opsi durasi tersebut.</p>
           </div>
           <div class="col-span-2">
             <label class="block text-xs font-medium text-white mb-1">Link Download (MediaFire)</label>
@@ -185,20 +212,30 @@ const fmt = (p: number) =>
     const formError = document.getElementById('form-error');
     const submitBtn = document.getElementById('form-submit');
     const categorySelect = document.getElementById('f-category');
-    const durationRow = document.getElementById('f-duration-row');
-    const durationSelect = document.getElementById('f-duration');
+    const cheatSection = document.getElementById('f-cheat-section');
+    const priceRow = document.getElementById('f-price').closest('div');
 
-    function toggleDurationRow() {
-      const selected = categorySelect.value;
-      if (cheatCatId && selected === cheatCatId) {
-        durationRow.classList.remove('hidden');
+    function getCheatPriceInput(dur) {
+      return document.getElementById(`f-price-${dur}`);
+    }
+
+    function toggleCheatSection() {
+      const isCheat = cheatCatId && categorySelect.value === cheatCatId;
+      if (isCheat) {
+        cheatSection.classList.remove('hidden');
+        // Hide the regular price row — cheat app uses per-duration prices
+        priceRow.classList.add('hidden');
       } else {
-        durationRow.classList.add('hidden');
-        durationSelect.value = '3d';
+        cheatSection.classList.add('hidden');
+        priceRow.classList.remove('hidden');
+        ['3d', '7d', '30d', 'perm'].forEach((d) => {
+          const el = getCheatPriceInput(d);
+          if (el) el.value = '';
+        });
       }
     }
 
-    categorySelect.addEventListener('change', toggleDurationRow);
+    categorySelect.addEventListener('change', toggleCheatSection);
 
     function openModal(title) {
       modalTitle.textContent = title;
@@ -210,7 +247,8 @@ const fmt = (p: number) =>
       editIdInput.value = '';
       document.getElementById('img-preview-container').classList.add('hidden');
       formError.classList.add('hidden');
-      durationRow.classList.add('hidden');
+      cheatSection.classList.add('hidden');
+      priceRow.classList.remove('hidden');
     }
 
     document.getElementById('add-btn').addEventListener('click', () => openModal('Tambah Produk'));
@@ -222,8 +260,7 @@ const fmt = (p: number) =>
     document.getElementById('f-image').addEventListener('change', (e) => {
       const file = e.target.files?.[0];
       if (file) {
-        const preview = document.getElementById('img-preview');
-        preview.src = URL.createObjectURL(file);
+        document.getElementById('img-preview').src = URL.createObjectURL(file);
         document.getElementById('img-preview-container').classList.remove('hidden');
       }
     });
@@ -241,8 +278,18 @@ const fmt = (p: number) =>
         categorySelect.value = String(p.category_id);
         document.getElementById('f-link').value = p.download_link;
         document.getElementById('f-available').checked = p.is_available;
-        if (p.cheat_duration) durationSelect.value = p.cheat_duration;
-        toggleDurationRow();
+
+        // Restore cheat prices if any
+        if (p.cheat_prices && p.cheat_prices.length > 0) {
+          p.cheat_prices.forEach((cp) => {
+            const key = cp.duration === 'permanent' ? 'perm' : cp.duration;
+            const el = getCheatPriceInput(key);
+            if (el) el.value = cp.price;
+          });
+        }
+
+        toggleCheatSection();
+
         if (p.image_url) {
           document.getElementById('img-preview').src = p.image_url;
           document.getElementById('img-preview-container').classList.remove('hidden');
@@ -258,11 +305,8 @@ const fmt = (p: number) =>
           fetch(`/api/products/${id}`, { method: 'DELETE' })
             .then((r) => r.json())
             .then((d) => {
-              if (d.ok) {
-                delBtn.closest('tr')?.remove();
-              } else {
-                alert(d.error || 'Gagal menghapus');
-              }
+              if (d.ok) delBtn.closest('tr')?.remove();
+              else alert(d.error || 'Gagal menghapus');
             });
         }
       }
@@ -277,18 +321,28 @@ const fmt = (p: number) =>
 
       const id = editIdInput.value;
       const isEdit = !!id;
+      const isCheat = cheatCatId && categorySelect.value === cheatCatId;
       const fd = new FormData();
       fd.append('name', document.getElementById('f-name').value);
       fd.append('description', document.getElementById('f-desc').value);
-      fd.append('price', document.getElementById('f-price').value);
       fd.append('stock', document.getElementById('f-stock').value);
       fd.append('category_id', categorySelect.value);
       fd.append('download_link', document.getElementById('f-link').value);
       fd.append('is_available', String(document.getElementById('f-available').checked));
 
-      // Include cheat_duration only when Cheat App category is selected
-      if (cheatCatId && categorySelect.value === cheatCatId) {
-        fd.append('cheat_duration', durationSelect.value);
+      if (isCheat) {
+        // For cheat app: use the lowest filled price as display price
+        const prices = {
+          '3d': parseInt(document.getElementById('f-price-3d').value) || 0,
+          '7d': parseInt(document.getElementById('f-price-7d').value) || 0,
+          '30d': parseInt(document.getElementById('f-price-30d').value) || 0,
+          'permanent': parseInt(document.getElementById('f-price-perm').value) || 0,
+        };
+        const minPrice = Math.min(...Object.values(prices).filter(v => v > 0)) || 0;
+        fd.append('price', String(minPrice));
+        fd.append('cheat_prices', JSON.stringify(prices));
+      } else {
+        fd.append('price', document.getElementById('f-price').value);
       }
 
       const imgFile = document.getElementById('f-image').files?.[0];

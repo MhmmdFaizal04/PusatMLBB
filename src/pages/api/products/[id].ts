@@ -36,9 +36,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
     const categoryId = formData.get('category_id')?.toString() || null;
     const downloadLink = formData.get('download_link')?.toString() || null;
     const isAvailable = formData.get('is_available') === 'true';
-    const cheatDuration = formData.get('cheat_duration')?.toString() || null;
-    const VALID_DURATIONS = ['3d', '7d', '30d', 'permanent'];
-    const validatedDuration = cheatDuration && VALID_DURATIONS.includes(cheatDuration) ? cheatDuration : null;
+    const cheatPricesRaw = formData.get('cheat_prices')?.toString() || null;
     const imageFile = formData.get('image') as File | null;
 
     // Get existing product
@@ -51,7 +49,6 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
     let imagePublicId: string | null = existing[0].image_public_id;
 
     if (imageFile && imageFile.size > 0) {
-      // Delete old image
       if (existing[0].image_public_id) {
         await deleteFromCloudinary(existing[0].image_public_id);
       }
@@ -67,7 +64,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
         SET name=${name}, description=${description}, price=${price}, stock=${stock},
             category_id=${categoryId}, download_link=${downloadLink},
             is_available=${isAvailable}, image_url=${imageUrl}, image_public_id=${imagePublicId},
-            cheat_duration=${validatedDuration}, updated_at=NOW()
+            updated_at=NOW()
         WHERE id = ${params.id!}
       `;
     } else {
@@ -75,9 +72,27 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
         UPDATE products
         SET name=${name}, description=${description}, price=${price}, stock=${stock},
             category_id=${categoryId}, download_link=${downloadLink},
-            is_available=${isAvailable}, cheat_duration=${validatedDuration}, updated_at=NOW()
+            is_available=${isAvailable}, updated_at=NOW()
         WHERE id = ${params.id!}
       `;
+    }
+
+    // Save cheat app prices if provided
+    if (cheatPricesRaw) {
+      const VALID_DURATIONS = ['3d', '7d', '30d', 'permanent'];
+      const prices: Record<string, number> = JSON.parse(cheatPricesRaw);
+      for (const duration of VALID_DURATIONS) {
+        const p = prices[duration] ?? 0;
+        if (p > 0) {
+          await sql`
+            INSERT INTO cheat_app_prices (product_id, duration, price)
+            VALUES (${params.id!}, ${duration}, ${p})
+            ON CONFLICT (product_id, duration) DO UPDATE SET price = EXCLUDED.price
+          `;
+        } else {
+          await sql`DELETE FROM cheat_app_prices WHERE product_id = ${params.id!} AND duration = ${duration}`;
+        }
+      }
     }
 
     return new Response(JSON.stringify({ ok: true }), {

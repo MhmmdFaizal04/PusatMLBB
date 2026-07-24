@@ -62,11 +62,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    // Get cart items
+    // Get cart items (with cheat price override)
     const cartItems = await sql`
-      SELECT ci.quantity, p.id AS product_id, p.name, p.price, p.stock, p.is_available
+      SELECT ci.quantity, ci.cheat_duration,
+             p.id AS product_id, p.name, p.stock, p.is_available,
+             COALESCE(cap.price, p.price) AS price
       FROM cart_items ci
       JOIN products p ON p.id = ci.product_id
+      LEFT JOIN cheat_app_prices cap
+        ON cap.product_id = p.id AND cap.duration = ci.cheat_duration
       WHERE ci.user_id = ${locals.user.userId}
     `;
 
@@ -142,9 +146,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Insert order items
     for (const item of cartItems) {
       await sql`
-        INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase, product_name)
+        INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase, product_name, cheat_duration)
         VALUES (${orderId}, ${(item as Record<string, unknown>).product_id}, ${(item as Record<string, unknown>).quantity},
-                ${(item as Record<string, unknown>).price}, ${(item as Record<string, unknown>).name})
+                ${(item as Record<string, unknown>).price}, ${(item as Record<string, unknown>).name},
+                ${(item as Record<string, unknown>).cheat_duration ?? null})
       `;
     }
 

@@ -6,12 +6,21 @@ const user = Astro.locals.user!;
 
 const [cartItems, qrisRows] = (await Promise.all([
   sql`
-    SELECT ci.quantity, p.id AS product_id, p.name, p.price, p.stock, p.is_available
-    FROM cart_items ci JOIN products p ON p.id = ci.product_id
+    SELECT ci.quantity, ci.cheat_duration,
+           p.id AS product_id, p.name, p.stock, p.is_available,
+           COALESCE(cap.price, p.price) AS price
+    FROM cart_items ci
+    JOIN products p ON p.id = ci.product_id
+    LEFT JOIN cheat_app_prices cap
+      ON cap.product_id = p.id AND cap.duration = ci.cheat_duration
     WHERE ci.user_id = ${user.userId}
   `.catch(() => []),
   sql`SELECT image_url FROM qris_settings WHERE id = 1`.catch(() => []),
 ])) as [any[], any[]];
+
+const DURATION_LABELS: Record<string, string> = {
+  '3d': '3 Hari', '7d': '7 Hari', '30d': '1 Bulan', 'permanent': 'Permanent',
+};
 
 if (cartItems.length === 0) return Astro.redirect('/cart');
 
@@ -54,7 +63,7 @@ const fmt = (p: number) =>
       <div class="flex flex-col gap-2">
         {cartItems.map((item: any) => (
           <div class="flex justify-between text-sm">
-            <span class="text-muted">{item.name} x{item.quantity}</span>
+            <span class="text-muted">{item.name}{item.cheat_duration ? ` (${DURATION_LABELS[item.cheat_duration] ?? item.cheat_duration})` : ''} x{item.quantity}</span>
             <span class="text-white font-medium">{fmt(item.price * item.quantity)}</span>
           </div>
         ))}

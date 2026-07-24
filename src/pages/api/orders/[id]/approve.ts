@@ -29,9 +29,8 @@ export const PUT: APIRoute = async ({ params, locals }) => {
     if (order.status !== 'approved') {
       const items = await sql`
         SELECT oi.id AS item_id, oi.product_id, oi.quantity, oi.product_name,
-               p.cheat_duration
+               oi.cheat_duration
         FROM order_items oi
-        LEFT JOIN products p ON p.id = oi.product_id
         WHERE oi.order_id = ${params.id!}
       `;
 
