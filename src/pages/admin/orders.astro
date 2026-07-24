@@ -19,12 +19,22 @@ const orders = (status
 
 const orderIds = orders.map((o: any) => o.id as string);
 let orderItems: any[] = [];
+let orderKeys: any[] = [];
 if (orderIds.length > 0) {
   orderItems = await sql`
     SELECT oi.order_id, oi.product_name, oi.quantity, oi.price_at_purchase
     FROM order_items oi WHERE oi.order_id = ANY(${orderIds})
   `.catch(() => []);
+
+  orderKeys = await sql`
+    SELECT ok.order_id, ok.code, ok.duration, ok.product_name
+    FROM order_keys ok
+    WHERE ok.order_id = ANY(${orderIds})
+    ORDER BY ok.generated_at ASC
+  `.catch(() => []);
 }
+
+const durationLabel: Record<string, string> = { '3d': '3 Hari', '7d': '7 Hari', '30d': '1 Bulan', 'permanent': 'Permanent' };
 
 const fmt = (p: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
@@ -71,8 +81,7 @@ const statusOpts = [
   ) : (
     <div class="flex flex-col gap-4">
       {orders.map((order: any) => {
-        const items = orderItems.filter((i: any) => i.order_id === order.id);
-        return (
+        const items = orderItems.filter((i: any) => i.order_id === order.id);          const keys = orderKeys.filter((k: any) => k.order_id === order.id);        return (
           <div class="bg-surface border border-border rounded-2xl p-5" data-order-id={order.id}>
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <div>
@@ -102,6 +111,26 @@ const statusOpts = [
                 </div>
               ))}
             </div>
+
+            <!-- Generated Keys (Cheat App) -->
+            {keys.length > 0 && (
+              <div class="mb-3 bg-brand/5 border border-brand/20 rounded-xl p-3 space-y-2">
+                <p class="text-xs font-bold text-brand">
+                  <svg class="w-3 h-3 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                  </svg>
+                  Key Cheat App yang di-generate:
+                </p>
+                {keys.map((k: any) => (
+                  <div class="flex items-center justify-between gap-2 bg-bg border border-border rounded-lg px-3 py-2">
+                    <div>
+                      <span class="font-mono font-bold text-white text-xs tracking-widest">{k.code}</span>
+                      <span class="ml-2 text-[10px] text-muted">{k.product_name} · {durationLabel[k.duration] ?? k.duration}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div class="flex flex-wrap items-center gap-2">
               {order.proof_image_url && (

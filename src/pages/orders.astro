@@ -13,17 +13,33 @@ const orders = (await sql`
 
 const orderIds = orders.map((o: any) => o.id);
 let orderItems: any[] = [];
+let orderKeys: any[] = [];
 if (orderIds.length > 0) {
   orderItems = await sql`
     SELECT oi.order_id, oi.product_name, oi.quantity, oi.price_at_purchase
     FROM order_items oi WHERE oi.order_id = ANY(${orderIds})
   `.catch(() => []);
+
+  orderKeys = await sql`
+    SELECT ok.order_id, ok.code, ok.duration, ok.product_name, ok.generated_at,
+           rc.used
+    FROM order_keys ok
+    LEFT JOIN redeem_codes rc ON rc.code = ok.code
+    WHERE ok.order_id = ANY(${orderIds})
+    ORDER BY ok.generated_at ASC
+  `.catch(() => []);
 }
+
+// Fetch APK download URL from app_version
+const appVersionRows = await sql`SELECT download_url FROM app_version ORDER BY id DESC LIMIT 1`.catch(() => []);
+const apkDownloadUrl: string = appVersionRows[0]?.download_url ?? '';
 
 const waNumber = import.meta.env.PUBLIC_WA_ADMIN ?? '62895401426305';
 
 const fmt = (p: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
+
+const durationLabel: Record<string, string> = { '3d': '3 Hari', '7d': '7 Hari', '30d': '1 Bulan', 'permanent': 'Permanent' };
 
 const statusLabel: Record<string, { label: string; cls: string }> = {
   pending_payment: { label: 'Menunggu Bayar', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
@@ -46,6 +62,7 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
       <div class="flex flex-col gap-4">
         {orders.map((order: any) => {
           const items = orderItems.filter((i: any) => i.order_id === order.id);
+          const keys = orderKeys.filter((k: any) => k.order_id === order.id);
           const st = statusLabel[order.status] ?? { label: order.status, cls: 'bg-surface-3 text-muted border-border' };
           const waText = encodeURIComponent(
             `Halo Admin PusatMLBB, saya sudah transfer untuk Order #${order.id.slice(0, 8)}...\nTotal: ${fmt(order.total_amount)}\nBukti: ${order.proof_image_url ?? '-'}\nMohon segera dikonfirmasi.`
@@ -71,6 +88,49 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
                 ))}
               </div>
 
+              <!-- Cheat App Keys (shown when approved and keys exist) -->
+              {order.status === 'approved' && keys.length > 0 && (
+                <div class="mb-3 bg-brand/5 border border-brand/20 rounded-xl p-4 space-y-3">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                    </svg>
+                    <span class="text-xs font-bold text-brand uppercase tracking-wide">Redeem Key Cheat App</span>
+                  </div>
+
+                  {keys.map((k: any) => (
+                    <div class="bg-bg border border-border rounded-lg p-3 space-y-2">
+                      <div class="flex items-center justify-between gap-2 flex-wrap">
+                        <span class="font-mono font-bold text-white tracking-widest text-sm">{k.code}</span>
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand/10 border border-brand/20 text-brand">
+                          {durationLabel[k.duration] ?? k.duration}
+                        </span>
+                      </div>
+                      <div class="text-xs text-muted">{k.product_name}</div>
+                      {k.used && (
+                        <div class="text-xs text-red-400">⚠ Kode ini sudah digunakan</div>
+                      )}
+                    </div>
+                  ))}
+
+                  {apkDownloadUrl && (
+                    <a
+                      href={apkDownloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="flex items-center gap-2 w-full justify-center py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                      </svg>
+                      Download APK
+                    </a>
+                  )}
+
+                  <p class="text-[10px] text-muted text-center">Masukkan kode di atas pada aplikasi untuk mengaktifkan akses VIP.</p>
+                </div>
+              )}
+
               <div class="flex items-center justify-between border-t border-border pt-3">
                 <span class="font-bold text-brand">{fmt(order.total_amount)}</span>
                 <div class="flex items-center gap-2">
@@ -80,7 +140,7 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
                       Lihat Bukti
                     </a>
                   )}
-                  {order.status === 'approved' && (
+                  {order.status === 'approved' && keys.length === 0 && (
                     <a href="/files" class="text-xs bg-green-500/10 text-green-400 border border-green-500/20 px-3 py-1.5 rounded-lg hover:bg-green-500/20 transition-colors">
                       Download File
                     </a>

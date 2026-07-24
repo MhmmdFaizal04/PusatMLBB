@@ -1,6 +1,13 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../../../lib/db';
 
+function generateRedeemCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const part = (len: number) =>
+    Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return `ZALL-${part(4)}-${part(4)}`;
+}
+
 export const PUT: APIRoute = async ({ params, locals }) => {
   if (locals.user?.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
@@ -21,15 +28,47 @@ export const PUT: APIRoute = async ({ params, locals }) => {
     // Kurangi stok hanya jika belum pernah approved (hindari double-kurang)
     if (order.status !== 'approved') {
       const items = await sql`
-        SELECT product_id, quantity FROM order_items
-        WHERE order_id = ${params.id!} AND product_id IS NOT NULL
+        SELECT oi.id AS item_id, oi.product_id, oi.quantity, oi.product_name,
+               p.cheat_duration
+        FROM order_items oi
+        LEFT JOIN products p ON p.id = oi.product_id
+        WHERE oi.order_id = ${params.id!}
       `;
+
       for (const item of items as any[]) {
-        await sql`
-          UPDATE products
-          SET stock = GREATEST(stock - ${item.quantity}, 0)
-          WHERE id = ${item.product_id}
-        `;
+        // Kurangi stok untuk semua produk
+        if (item.product_id) {
+          await sql`
+            UPDATE products
+            SET stock = GREATEST(stock - ${item.quantity}, 0)
+            WHERE id = ${item.product_id}
+          `;
+        }
+
+        // Generate redeem key untuk Cheat App products
+        if (item.cheat_duration) {
+          // Generate one code per quantity purchased
+          for (let q = 0; q < item.quantity; q++) {
+            let code = generateRedeemCode();
+            // Ensure uniqueness — retry up to 5 times
+            for (let attempt = 0; attempt < 5; attempt++) {
+              const existing = await sql`SELECT code FROM redeem_codes WHERE code = ${code}`;
+              if (existing.length === 0) break;
+              code = generateRedeemCode();
+            }
+            // Insert into redeem_codes
+            await sql`
+              INSERT INTO redeem_codes (code, duration)
+              VALUES (${code}, ${item.cheat_duration})
+              ON CONFLICT (code) DO NOTHING
+            `;
+            // Insert into order_keys
+            await sql`
+              INSERT INTO order_keys (order_id, code, duration, product_name)
+              VALUES (${params.id!}, ${code}, ${item.cheat_duration}, ${item.product_name})
+            `;
+          }
+        }
       }
     }
 
@@ -37,7 +76,8 @@ export const PUT: APIRoute = async ({ params, locals }) => {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch {
+  } catch (err) {
+    console.error(err);
     return new Response(JSON.stringify({ error: 'Gagal menyetujui pesanan' }), { status: 500 });
   }
 };

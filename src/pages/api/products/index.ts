@@ -55,6 +55,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const categoryId = formData.get('category_id')?.toString() || null;
     const downloadLink = formData.get('download_link')?.toString() || null;
     const isAvailable = formData.get('is_available') === 'true';
+    const cheatDuration = formData.get('cheat_duration')?.toString() || null;
     const imageFile = formData.get('image') as File | null;
 
     if (!name || price <= 0) {
@@ -62,6 +63,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
         status: 400,
       });
     }
+
+    const VALID_DURATIONS = ['3d', '7d', '30d', 'permanent'];
+    const validatedDuration = cheatDuration && VALID_DURATIONS.includes(cheatDuration) ? cheatDuration : null;
 
     let imageUrl: string | null = null;
     let imagePublicId: string | null = null;
@@ -75,9 +79,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const rows = await sql`
       INSERT INTO products (name, description, price, stock, category_id, download_link,
-                            is_available, image_url, image_public_id)
+                            is_available, image_url, image_public_id, cheat_duration)
       VALUES (${name}, ${description}, ${price}, ${stock}, ${categoryId},
-              ${downloadLink}, ${isAvailable}, ${imageUrl}, ${imagePublicId})
+              ${downloadLink}, ${isAvailable}, ${imageUrl}, ${imagePublicId}, ${validatedDuration})
       RETURNING id
     `;
 

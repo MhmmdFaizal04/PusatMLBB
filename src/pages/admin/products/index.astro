@@ -9,6 +9,8 @@ const products = await sql`
 `.catch(() => []);
 
 const categories = await sql`SELECT * FROM categories ORDER BY name`.catch(() => []);
+const cheatCat = (categories as any[]).find((c: any) => c.slug === 'cheat-app');
+const cheatCatId: string = cheatCat ? String(cheatCat.id) : '';
 
 const fmt = (p: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p);
@@ -69,7 +71,7 @@ const fmt = (p: number) =>
                       id: p.id, name: p.name, description: p.description ?? '',
                       price: p.price, stock: p.stock, is_available: p.is_available,
                       category_id: p.category_id ?? '', download_link: p.download_link ?? '',
-                      image_url: p.image_url ?? ''
+                      image_url: p.image_url ?? '', cheat_duration: p.cheat_duration ?? ''
                     })}
                   >Edit</button>
                   <button
@@ -130,6 +132,18 @@ const fmt = (p: number) =>
               ))}
             </select>
           </div>
+          <!-- Cheat App duration (shown only when Cheat App category selected) -->
+          <div id="f-duration-row" class="col-span-2 hidden">
+            <label class="block text-xs font-medium text-white mb-1">Durasi Akses Cheat <span class="text-brand">*</span></label>
+            <select id="f-duration"
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand/50 transition-colors">
+              <option value="3d">3 Hari</option>
+              <option value="7d">7 Hari (1 Minggu)</option>
+              <option value="30d">30 Hari (1 Bulan)</option>
+              <option value="permanent">Permanent</option>
+            </select>
+            <p class="text-muted text-xs mt-1">Durasi VIP yang akan diaktifkan setelah pembelian disetujui.</p>
+          </div>
           <div class="col-span-2">
             <label class="block text-xs font-medium text-white mb-1">Link Download (MediaFire)</label>
             <input id="f-link" type="url" placeholder="https://mediafire.com/..."
@@ -163,15 +177,30 @@ const fmt = (p: number) =>
     </div>
   </div>
 
-  <script>
-    const modal = document.getElementById('modal')!;
-    const modalTitle = document.getElementById('modal-title')!;
-    const editIdInput = document.getElementById('edit-id') as HTMLInputElement;
-    const form = document.getElementById('product-form') as HTMLFormElement;
-    const formError = document.getElementById('form-error')!;
-    const submitBtn = document.getElementById('form-submit') as HTMLButtonElement;
+  <script define:vars={{ cheatCatId }}>
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const editIdInput = document.getElementById('edit-id');
+    const form = document.getElementById('product-form');
+    const formError = document.getElementById('form-error');
+    const submitBtn = document.getElementById('form-submit');
+    const categorySelect = document.getElementById('f-category');
+    const durationRow = document.getElementById('f-duration-row');
+    const durationSelect = document.getElementById('f-duration');
 
-    function openModal(title: string) {
+    function toggleDurationRow() {
+      const selected = categorySelect.value;
+      if (cheatCatId && selected === cheatCatId) {
+        durationRow.classList.remove('hidden');
+      } else {
+        durationRow.classList.add('hidden');
+        durationSelect.value = '3d';
+      }
+    }
+
+    categorySelect.addEventListener('change', toggleDurationRow);
+
+    function openModal(title) {
       modalTitle.textContent = title;
       modal.classList.remove('hidden');
     }
@@ -179,49 +208,52 @@ const fmt = (p: number) =>
       modal.classList.add('hidden');
       form.reset();
       editIdInput.value = '';
-      (document.getElementById('img-preview-container') as HTMLElement).classList.add('hidden');
+      document.getElementById('img-preview-container').classList.add('hidden');
       formError.classList.add('hidden');
+      durationRow.classList.add('hidden');
     }
 
-    document.getElementById('add-btn')!.addEventListener('click', () => openModal('Tambah Produk'));
-    document.getElementById('modal-close')!.addEventListener('click', closeModal);
-    document.getElementById('modal-cancel')!.addEventListener('click', closeModal);
+    document.getElementById('add-btn').addEventListener('click', () => openModal('Tambah Produk'));
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.getElementById('modal-cancel').addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
     // Image preview
-    document.getElementById('f-image')!.addEventListener('change', (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
+    document.getElementById('f-image').addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
       if (file) {
-        const preview = document.getElementById('img-preview') as HTMLImageElement;
+        const preview = document.getElementById('img-preview');
         preview.src = URL.createObjectURL(file);
-        document.getElementById('img-preview-container')!.classList.remove('hidden');
+        document.getElementById('img-preview-container').classList.remove('hidden');
       }
     });
 
     // Edit buttons
     document.addEventListener('click', (e) => {
-      const editBtn = (e.target as HTMLElement).closest('.edit-btn') as HTMLElement | null;
+      const editBtn = e.target.closest('.edit-btn');
       if (editBtn) {
-        const p = JSON.parse(editBtn.dataset.product!);
+        const p = JSON.parse(editBtn.dataset.product);
         editIdInput.value = p.id;
-        (document.getElementById('f-name') as HTMLInputElement).value = p.name;
-        (document.getElementById('f-desc') as HTMLTextAreaElement).value = p.description;
-        (document.getElementById('f-price') as HTMLInputElement).value = p.price;
-        (document.getElementById('f-stock') as HTMLInputElement).value = p.stock;
-        (document.getElementById('f-category') as HTMLSelectElement).value = String(p.category_id);
-        (document.getElementById('f-link') as HTMLInputElement).value = p.download_link;
-        (document.getElementById('f-available') as HTMLInputElement).checked = p.is_available;
+        document.getElementById('f-name').value = p.name;
+        document.getElementById('f-desc').value = p.description;
+        document.getElementById('f-price').value = p.price;
+        document.getElementById('f-stock').value = p.stock;
+        categorySelect.value = String(p.category_id);
+        document.getElementById('f-link').value = p.download_link;
+        document.getElementById('f-available').checked = p.is_available;
+        if (p.cheat_duration) durationSelect.value = p.cheat_duration;
+        toggleDurationRow();
         if (p.image_url) {
-          (document.getElementById('img-preview') as HTMLImageElement).src = p.image_url;
-          document.getElementById('img-preview-container')!.classList.remove('hidden');
+          document.getElementById('img-preview').src = p.image_url;
+          document.getElementById('img-preview-container').classList.remove('hidden');
         }
         openModal('Edit Produk');
       }
 
-      const delBtn = (e.target as HTMLElement).closest('.del-btn') as HTMLElement | null;
+      const delBtn = e.target.closest('.del-btn');
       if (delBtn) {
-        const id = delBtn.dataset.id!;
-        const name = delBtn.dataset.name!;
+        const id = delBtn.dataset.id;
+        const name = delBtn.dataset.name;
         if (confirm(`Hapus produk "${name}"? Tindakan ini tidak bisa dibatalkan.`)) {
           fetch(`/api/products/${id}`, { method: 'DELETE' })
             .then((r) => r.json())
@@ -246,14 +278,20 @@ const fmt = (p: number) =>
       const id = editIdInput.value;
       const isEdit = !!id;
       const fd = new FormData();
-      fd.append('name', (document.getElementById('f-name') as HTMLInputElement).value);
-      fd.append('description', (document.getElementById('f-desc') as HTMLTextAreaElement).value);
-      fd.append('price', (document.getElementById('f-price') as HTMLInputElement).value);
-      fd.append('stock', (document.getElementById('f-stock') as HTMLInputElement).value);
-      fd.append('category_id', (document.getElementById('f-category') as HTMLSelectElement).value);
-      fd.append('download_link', (document.getElementById('f-link') as HTMLInputElement).value);
-      fd.append('is_available', String((document.getElementById('f-available') as HTMLInputElement).checked));
-      const imgFile = (document.getElementById('f-image') as HTMLInputElement).files?.[0];
+      fd.append('name', document.getElementById('f-name').value);
+      fd.append('description', document.getElementById('f-desc').value);
+      fd.append('price', document.getElementById('f-price').value);
+      fd.append('stock', document.getElementById('f-stock').value);
+      fd.append('category_id', categorySelect.value);
+      fd.append('download_link', document.getElementById('f-link').value);
+      fd.append('is_available', String(document.getElementById('f-available').checked));
+
+      // Include cheat_duration only when Cheat App category is selected
+      if (cheatCatId && categorySelect.value === cheatCatId) {
+        fd.append('cheat_duration', durationSelect.value);
+      }
+
+      const imgFile = document.getElementById('f-image').files?.[0];
       if (imgFile) fd.append('image', imgFile);
 
       try {

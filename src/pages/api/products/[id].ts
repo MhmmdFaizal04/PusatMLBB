@@ -36,6 +36,9 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
     const categoryId = formData.get('category_id')?.toString() || null;
     const downloadLink = formData.get('download_link')?.toString() || null;
     const isAvailable = formData.get('is_available') === 'true';
+    const cheatDuration = formData.get('cheat_duration')?.toString() || null;
+    const VALID_DURATIONS = ['3d', '7d', '30d', 'permanent'];
+    const validatedDuration = cheatDuration && VALID_DURATIONS.includes(cheatDuration) ? cheatDuration : null;
     const imageFile = formData.get('image') as File | null;
 
     // Get existing product
@@ -64,7 +67,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
         SET name=${name}, description=${description}, price=${price}, stock=${stock},
             category_id=${categoryId}, download_link=${downloadLink},
             is_available=${isAvailable}, image_url=${imageUrl}, image_public_id=${imagePublicId},
-            updated_at=NOW()
+            cheat_duration=${validatedDuration}, updated_at=NOW()
         WHERE id = ${params.id!}
       `;
     } else {
@@ -72,7 +75,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
         UPDATE products
         SET name=${name}, description=${description}, price=${price}, stock=${stock},
             category_id=${categoryId}, download_link=${downloadLink},
-            is_available=${isAvailable}, updated_at=NOW()
+            is_available=${isAvailable}, cheat_duration=${validatedDuration}, updated_at=NOW()
         WHERE id = ${params.id!}
       `;
     }
