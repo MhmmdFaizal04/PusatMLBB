@@ -213,7 +213,8 @@ const fmt = (p: number) =>
     const submitBtn = document.getElementById('form-submit');
     const categorySelect = document.getElementById('f-category');
     const cheatSection = document.getElementById('f-cheat-section');
-    const priceRow = document.getElementById('f-price').closest('div');
+    const priceInput = document.getElementById('f-price');
+    const priceRow = priceInput.closest('div');
 
     function getCheatPriceInput(dur) {
       return document.getElementById(`f-price-${dur}`);
@@ -225,9 +226,11 @@ const fmt = (p: number) =>
         cheatSection.classList.remove('hidden');
         // Hide the regular price row — cheat app uses per-duration prices
         priceRow.classList.add('hidden');
+        priceInput.required = false;
       } else {
         cheatSection.classList.add('hidden');
         priceRow.classList.remove('hidden');
+        priceInput.required = true;
         ['3d', '7d', '30d', 'perm'].forEach((d) => {
           const el = getCheatPriceInput(d);
           if (el) el.value = '';
