@@ -74,5 +74,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
     });
   }
 
+  // Guard: Android-facing public API routes (require X-App-Key header)
+  const androidApiPaths = ['/api/redeem', '/api/device/', '/api/app/'];
+  if (androidApiPaths.some((p) => pathname.startsWith(p))) {
+    const appKey = import.meta.env.APP_API_KEY as string | undefined;
+    if (appKey) {
+      const sentKey = request.headers.get('X-App-Key');
+      if (!sentKey || sentKey !== appKey) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+  }
+
   return next();
 });

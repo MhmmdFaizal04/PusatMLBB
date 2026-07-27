@@ -164,7 +164,7 @@ const current = rows[0] ?? {
             <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
             <span class="text-xs font-bold text-red-400 uppercase tracking-wide">Update Wajib</span>
           </div>
-          <p id="prev-message-force" class="text-sm text-white font-medium">{current.message}</p>
+          <p id="prev-message-force" class="text-sm text-white font-medium whitespace-pre-wrap">{current.message}</p>
           <div class="text-xs text-muted space-y-0.5">
             <p>Versi kamu: <span class="text-white">X.X</span></p>
             <p>Versi terbaru: <span id="prev-latest-force" class="text-brand">{current.latest_version}</span></p>
@@ -177,7 +177,7 @@ const current = rows[0] ?? {
             <span class="w-2 h-2 rounded-full bg-green-400"></span>
             <span class="text-xs font-bold text-green-400 uppercase tracking-wide">Berjalan Normal</span>
           </div>
-          <p id="prev-message-normal" class="text-sm text-white">{current.message}</p>
+          <p id="prev-message-normal" class="text-sm text-white whitespace-pre-wrap">{current.message}</p>
           <div class="text-xs text-muted">
             Versi terbaru tersedia: <span id="prev-latest-normal" class="text-brand">{current.latest_version}</span>
           </div>
@@ -249,6 +249,7 @@ const current = rows[0] ?? {
     const m = inpMessage.value || '—';
     document.getElementById('prev-latest-force')!.textContent = v;
     document.getElementById('prev-latest-normal')!.textContent = v;
+    // Use textContent so newlines render correctly via white-space: pre-wrap
     document.getElementById('prev-message-force')!.textContent = m;
     document.getElementById('prev-message-normal')!.textContent = m;
   }
