@@ -1,13 +1,14 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../lib/db';
 
-function addDuration(duration: string): Date | null {
+const JSON_HEADERS = { 'Content-Type': 'application/json' };
+
+function computeVipUntil(duration: string): Date | null {
   const now = new Date();
   if (duration === '3d') return new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
   if (duration === '7d') return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   if (duration === '30d') return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  if (duration === 'permanent') return null; // null = no expiry
-  return null;
+  return null; // permanent → null
 }
 
 // POST /api/redeem
@@ -16,17 +17,17 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     body = await request.json();
   } catch {
-    return new Response(JSON.stringify({ success: false, message: 'Body tidak valid', vipUntil: null }), { status: 400 });
+    return new Response(JSON.stringify({ message: 'Body tidak valid' }), { status: 400, headers: JSON_HEADERS });
   }
 
   const code = String(body.code ?? '').trim().toUpperCase();
   const deviceId = String(body.deviceId ?? '').trim();
 
   if (!code || !deviceId)
-    return new Response(JSON.stringify({ success: false, message: 'code dan deviceId wajib diisi', vipUntil: null }), { status: 400 });
+    return new Response(JSON.stringify({ message: 'code dan deviceId wajib diisi' }), { status: 400, headers: JSON_HEADERS });
 
   if (deviceId.length > 150)
-    return new Response(JSON.stringify({ success: false, message: 'deviceId terlalu panjang', vipUntil: null }), { status: 400 });
+    return new Response(JSON.stringify({ message: 'deviceId terlalu panjang' }), { status: 400, headers: JSON_HEADERS });
 
   try {
     // Fetch code record
@@ -35,25 +36,24 @@ export const POST: APIRoute = async ({ request }) => {
     `;
 
     if (rows.length === 0)
-      return new Response(JSON.stringify({ success: false, message: 'Kode tidak ditemukan', vipUntil: null }), { status: 404 });
+      return new Response(JSON.stringify({ message: 'Kode tidak valid' }), { status: 400, headers: JSON_HEADERS });
 
     const record = rows[0];
     if (record.used)
-      return new Response(JSON.stringify({ success: false, message: 'Kode sudah pernah digunakan', vipUntil: null }), { status: 409 });
+      return new Response(JSON.stringify({ message: 'Kode sudah digunakan' }), { status: 400, headers: JSON_HEADERS });
 
     // Mark code as used
-    const usedAt = new Date();
     await sql`
       UPDATE redeem_codes
-      SET used = true, used_by = ${deviceId}, used_at = ${usedAt}
+      SET used = true, used_by = ${deviceId}, used_at = NOW()
       WHERE code = ${code}
     `;
 
-    // Compute vip_until
-    const vipUntil = addDuration(record.duration);
-    const tier = record.duration === 'permanent' ? 'vip_permanent' : 'vip';
+    // Compute vip_until and tier (vip1 = timed, vip2 = permanent)
+    const vipUntil = computeVipUntil(record.duration);
+    const tier = record.duration === 'permanent' ? 'vip2' : 'vip1';
 
-    // Upsert device_vip
+    // Auto-create or update device_vip (never fails if device doesn't exist)
     await sql`
       INSERT INTO device_vip (device_id, vip_until, tier, updated_at)
       VALUES (${deviceId}, ${vipUntil}, ${tier}, NOW())
@@ -65,14 +65,15 @@ export const POST: APIRoute = async ({ request }) => {
 
     return new Response(
       JSON.stringify({
-        success: true,
-        message: 'Kode berhasil diredeem',
+        deviceId,
+        tier,
+        isVip: true,
         vipUntil: vipUntil ? vipUntil.toISOString() : null,
       }),
-      { status: 200 }
+      { status: 200, headers: JSON_HEADERS }
     );
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ success: false, message: 'Terjadi kesalahan server', vipUntil: null }), { status: 500 });
+    return new Response(JSON.stringify({ message: 'Terjadi kesalahan server' }), { status: 500, headers: JSON_HEADERS });
   }
 };

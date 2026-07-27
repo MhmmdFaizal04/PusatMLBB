@@ -36,7 +36,7 @@ export const GET: APIRoute = async () => {
         forceUpdate: row.force_update,
         latestVersion: row.latest_version,
         minVersion: row.min_version,
-        downloadUrl: row.download_url ?? '',
+        downloadUrl: row.download_url ?? null,
         message: row.message ?? '',
       }),
       {
