@@ -21,7 +21,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const user = context.locals.user;
 
-  // Log page visits (HTML pages only, not API/assets)
+  // Log page visits — only once per IP per day (not every page navigation)
   if (
     request.method === 'GET' &&
     !pathname.startsWith('/api/') &&
@@ -34,9 +34,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
         request.headers.get('x-real-ip') ||
         'unknown';
       const ipHash = createHash('sha256').update(ip).digest('hex').slice(0, 16);
-      sql`INSERT INTO visitor_logs (ip_hash, page) VALUES (${ipHash}, ${pathname})`.catch(
-        () => {},
-      );
+      // Only insert if this IP has not been logged in the last 24 hours
+      sql`
+        INSERT INTO visitor_logs (ip_hash, page)
+        SELECT ${ipHash}, ${pathname}
+        WHERE NOT EXISTS (
+          SELECT 1 FROM visitor_logs
+          WHERE ip_hash = ${ipHash}
+          AND created_at >= NOW() - INTERVAL '24 hours'
+        )
+      `.catch(() => {});
     } catch {
       // ignore
     }
