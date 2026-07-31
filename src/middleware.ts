@@ -21,18 +21,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const user = context.locals.user;
 
-  // Log page visits — only once per IP per day, only on root-level pages
-  // Skip /products/[id], /categories/[slug], etc. to reduce DB queries
-  const isRootPage =
-    pathname === '/' ||
-    pathname === '/products' ||
-    pathname === '/login' ||
-    pathname === '/register' ||
-    pathname === '/orders' ||
-    pathname === '/cart' ||
-    pathname === '/checkout';
-
-  if (request.method === 'GET' && isRootPage) {
+  // Log unique visitors — once per IP per 24 hours, regardless of which page they land on
+  if (
+    request.method === 'GET' &&
+    !pathname.startsWith('/api/') &&
+    !pathname.startsWith('/_') &&
+    !pathname.startsWith('/admin') &&
+    !pathname.includes('.')
+  ) {
     try {
       const ip =
         request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
