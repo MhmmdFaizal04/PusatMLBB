@@ -1,0 +1,169 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { sql } from '../../lib/db';
+
+const CONFIGS = [
+  { key: 'drone', label: 'Drone' },
+  { key: 'semi_fitur', label: 'Semi Fitur' },
+  { key: 'full_fitur', label: 'Full Fitur' },
+];
+
+// Ensure table & seed rows exist
+await sql`
+  CREATE TABLE IF NOT EXISTS config_links (
+    key VARCHAR(50) PRIMARY KEY,
+    label VARCHAR(100) NOT NULL,
+    url TEXT,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )
+`.catch(() => {});
+for (const c of CONFIGS) {
+  await sql`
+    INSERT INTO config_links (key, label, url)
+    VALUES (${c.key}, ${c.label}, NULL)
+    ON CONFLICT (key) DO NOTHING
+  `.catch(() => {});
+}
+
+const rows = await sql`SELECT key, label, url, updated_at FROM config_links ORDER BY key`.catch(() => []) as {
+  key: string;
+  label: string;
+  url: string | null;
+  updated_at: string | null;
+}[];
+
+const configMap = Object.fromEntries(rows.map((r) => [r.key, r]));
+---
+
+<AdminLayout title="Kelola Config - PusatMLBB">
+  <div class="max-w-2xl space-y-6">
+
+    <!-- Header -->
+    <div>
+      <h1 class="text-xl font-black text-white">Kelola Config</h1>
+      <p class="text-muted text-sm mt-0.5">
+        Link ZIP ini akan diakses langsung oleh aplikasi Android melalui
+        <code class="text-brand text-xs bg-brand/10 px-1.5 py-0.5 rounded">GET /api/config-links</code>
+      </p>
+    </div>
+
+    <!-- Cards -->
+    {CONFIGS.map((cfg) => {
+      const row = configMap[cfg.key];
+      const currentUrl = row?.url ?? '';
+      const updatedAt = row?.updated_at
+        ? new Date(row.updated_at).toLocaleDateString('id-ID', {
+            day: 'numeric', month: 'long', year: 'numeric',
+            hour: '2-digit', minute: '2-digit',
+          })
+        : null;
+      return (
+        <div class="bg-surface border border-border rounded-2xl p-6" data-config-card={cfg.key}>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="font-bold text-white">{cfg.label}</h2>
+              {updatedAt && (
+                <p class="text-xs text-muted mt-0.5">Terakhir diupdate: {updatedAt}</p>
+              )}
+            </div>
+            <span class={`text-xs font-semibold px-2.5 py-1 rounded-full border ${currentUrl ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'}`}>
+              {currentUrl ? 'Aktif' : 'Belum diisi'}
+            </span>
+          </div>
+
+          <div id={`msg-${cfg.key}`} class="hidden mb-3 p-3 rounded-xl text-sm"></div>
+
+          <div class="flex flex-col gap-3">
+            <div>
+              <label class="block text-xs font-medium text-white mb-1.5">
+                Direct Download Link ZIP
+              </label>
+              <div class="flex items-center gap-2 bg-brand/5 border border-brand/20 rounded-xl px-3 py-2 mb-2">
+                <svg class="w-4 h-4 text-brand shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                <span class="text-xs text-muted">Contoh: https://download1337.mediafire.com/xxx/Config.zip</span>
+              </div>
+              <input
+                type="url"
+                id={`url-${cfg.key}`}
+                value={currentUrl}
+                placeholder="https://download1337.mediafire.com/..."
+                class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors"
+              />
+            </div>
+
+            <button
+              id={`btn-${cfg.key}`}
+              data-key={cfg.key}
+              class="py-2.5 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Simpan
+            </button>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  <script>
+    document.querySelectorAll<HTMLButtonElement>('[data-key]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const key = btn.dataset.key!;
+        const input = document.getElementById(`url-${key}`) as HTMLInputElement;
+        const msgEl = document.getElementById(`msg-${key}`) as HTMLDivElement;
+
+        const url = input.value.trim();
+        if (url && !url.startsWith('http')) {
+          showMsg(msgEl, 'URL harus diawali dengan http/https', 'error');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Menyimpan...';
+
+        try {
+          const res = await fetch('/api/config-links', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key, url }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showMsg(msgEl, 'Berhasil disimpan!', 'success');
+            // Update badge
+            const card = document.querySelector(`[data-config-card="${key}"]`);
+            const badge = card?.querySelector('span[class*="rounded-full"]');
+            if (badge) {
+              if (url) {
+                badge.className = 'text-xs font-semibold px-2.5 py-1 rounded-full border bg-green-500/10 border-green-500/30 text-green-400';
+                badge.textContent = 'Aktif';
+              } else {
+                badge.className = 'text-xs font-semibold px-2.5 py-1 rounded-full border bg-yellow-500/10 border-yellow-500/30 text-yellow-400';
+                badge.textContent = 'Belum diisi';
+              }
+            }
+          } else {
+            showMsg(msgEl, data.error ?? 'Gagal menyimpan', 'error');
+          }
+        } catch {
+          showMsg(msgEl, 'Terjadi kesalahan jaringan', 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Simpan';
+        }
+      });
+    });
+
+    function showMsg(el: HTMLDivElement, text: string, type: 'success' | 'error') {
+      el.textContent = text;
+      el.className = `mb-3 p-3 rounded-xl text-sm ${
+        type === 'success'
+          ? 'bg-green-500/10 border border-green-500/20 text-green-400'
+          : 'bg-red-500/10 border border-red-500/20 text-red-400'
+      }`;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+  </script>
+</AdminLayout>
