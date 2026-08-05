@@ -14,12 +14,9 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
   const url = new URL(request.url);
   const pidRaw = url.searchParams.get('pid');
 
-  if (!orderId || !pidRaw) {
-    return new Response('Not Found', { status: 404 });
-  }
-
-  const productId = parseInt(pidRaw, 10);
-  if (isNaN(productId) || productId <= 0) {
+  // Basic UUID format validation to reject obviously invalid input
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!orderId || !pidRaw || !uuidRegex.test(orderId) || !uuidRegex.test(pidRaw)) {
     return new Response('Not Found', { status: 404 });
   }
 
@@ -33,7 +30,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
       AND o.user_id = ${user.userId}
       AND o.status = 'approved'
       AND (o.expires_at IS NULL OR o.expires_at > NOW())
-      AND oi.product_id = ${productId}
+      AND oi.product_id = ${pidRaw}
       AND p.download_link IS NOT NULL
     LIMIT 1
   `.catch(() => [])) as any[];
