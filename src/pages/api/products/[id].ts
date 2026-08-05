@@ -5,7 +5,9 @@ import { uploadToCloudinary, deleteFromCloudinary } from '../../../lib/cloudinar
 export const GET: APIRoute = async ({ params }) => {
   try {
     const rows = await sql`
-      SELECT p.*, c.name AS category_name, c.slug AS category_slug
+      SELECT p.id, p.name, p.description, p.price, p.stock, p.is_available,
+             p.image_url, p.category_id, p.created_at, p.updated_at,
+             c.name AS category_name, c.slug AS category_slug
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
       WHERE p.id = ${params.id!}
