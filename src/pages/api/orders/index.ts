@@ -30,9 +30,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
     let items: Array<Record<string, unknown>> = [];
     if (orderIds.length > 0) {
       items = await sql`
-        SELECT oi.*, p.download_link
+        SELECT oi.*
         FROM order_items oi
-        LEFT JOIN products p ON p.id = oi.product_id
         WHERE oi.order_id = ANY(${orderIds})
       `;
     }
