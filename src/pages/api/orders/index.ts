@@ -62,6 +62,41 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
+    // Validate proofUrl must be from our Cloudinary account (prevent URL manipulation)
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || import.meta.env.CLOUDINARY_CLOUD_NAME;
+    if (!proofUrl.startsWith(`https://res.cloudinary.com/${cloudName}/`)) {
+      return new Response(JSON.stringify({ error: 'Bukti pembayaran tidak valid' }), { status: 400 });
+    }
+
+    // Rate limit: max 3 pending orders per user
+    const pendingCount = await sql`
+      SELECT COUNT(*) AS cnt FROM orders
+      WHERE user_id = ${locals.user.userId}
+        AND status IN ('pending_payment', 'pending_approval')
+    `;
+    if (parseInt((pendingCount[0] as any).cnt, 10) >= 3) {
+      return new Response(
+        JSON.stringify({ error: 'Kamu memiliki terlalu banyak pesanan yang menunggu konfirmasi. Tunggu pesanan sebelumnya diproses.' }),
+        { status: 429 },
+      );
+    }
+
+    // Rate limit: 1 order per 5 minutes
+    const lastOrder = await sql`
+      SELECT created_at FROM orders
+      WHERE user_id = ${locals.user.userId}
+      ORDER BY created_at DESC LIMIT 1
+    `;
+    if (lastOrder.length > 0) {
+      const lastTime = new Date((lastOrder[0] as any).created_at).getTime();
+      if (Date.now() - lastTime < 5 * 60 * 1000) {
+        return new Response(
+          JSON.stringify({ error: 'Mohon tunggu beberapa menit sebelum membuat pesanan baru.' }),
+          { status: 429 },
+        );
+      }
+    }
+
     // Get cart items (with cheat price override)
     const cartItems = await sql`
       SELECT ci.quantity, ci.cheat_duration,

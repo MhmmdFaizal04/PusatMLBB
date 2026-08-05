@@ -82,5 +82,25 @@ export const onRequest = defineMiddleware(async (context, next) => {
     });
   }
 
-  return next();
+  const response = await next();
+
+  // Security headers — added to every response
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",           // Astro inline scripts
+      "style-src 'self' 'unsafe-inline'",            // Tailwind inline styles
+      "img-src 'self' data: https://res.cloudinary.com",
+      "connect-src 'self'",
+      "font-src 'self'",
+      "frame-ancestors 'none'",
+    ].join('; ')
+  );
+
+  return response;
 });
