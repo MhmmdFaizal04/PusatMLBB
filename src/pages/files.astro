@@ -6,8 +6,8 @@ const user = Astro.locals.user!;
 const now = Date.now();
 const rawFiles = (await sql`
   SELECT o.id AS order_id, o.created_at, o.expires_at, o.total_amount,
-         oi.product_name, oi.quantity,
-         p.download_link, p.name AS current_product_name
+         oi.product_name, oi.quantity, oi.product_id,
+         (p.download_link IS NOT NULL) AS has_link
   FROM orders o
   JOIN order_items oi ON oi.order_id = o.id
   LEFT JOIN products p ON p.id = oi.product_id
@@ -59,11 +59,9 @@ const files = rawFiles.map((f: any) => {
                 <p class={`text-xs mt-0.5 font-medium ${f.expiryColor}`}>{f.expiryLabel}</p>
               )}
             </div>
-            {f.download_link ? (
+            {f.has_link ? (
               <a
-                href={f.download_link}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/api/files/${f.order_id}?pid=${f.product_id}`}
                 class="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-xl transition-colors shrink-0"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
