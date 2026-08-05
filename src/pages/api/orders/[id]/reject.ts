@@ -6,10 +6,21 @@ export const PUT: APIRoute = async ({ params, locals }) => {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   }
   try {
-    const rows = await sql`SELECT id FROM orders WHERE id = ${params.id!}`;
+    const rows = await sql`SELECT id, status FROM orders WHERE id = ${params.id!}`;
     if (!rows.length) {
       return new Response(JSON.stringify({ error: 'Pesanan tidak ditemukan' }), { status: 404 });
     }
+
+    // If order was previously approved, invalidate any generated redeem keys
+    if ((rows[0] as any).status === 'approved') {
+      const keys = await sql`SELECT code FROM order_keys WHERE order_id = ${params.id!}`;
+      const codes = (keys as any[]).map((k) => k.code);
+      if (codes.length > 0) {
+        await sql`DELETE FROM redeem_codes WHERE code = ANY(${codes})`;
+        await sql`DELETE FROM order_keys WHERE order_id = ${params.id!}`;
+      }
+    }
+
     await sql`
       UPDATE orders SET status = 'rejected', updated_at = NOW()
       WHERE id = ${params.id!}
