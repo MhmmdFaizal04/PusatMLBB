@@ -1,0 +1,114 @@
+<!-- Social Proof Notification — data hardcoded, no API call -->
+<div
+  id="sp-toast"
+  class="fixed bottom-24 md:bottom-6 left-4 z-50 max-w-xs w-full pointer-events-none opacity-0 translate-y-4 transition-all duration-500"
+  aria-live="polite"
+>
+  <div class="bg-surface border border-border rounded-2xl px-4 py-3 flex items-center gap-3 shadow-2xl shadow-black/60">
+    <!-- Avatar -->
+    <div id="sp-avatar" class="w-10 h-10 rounded-full flex items-center justify-center font-black text-sm shrink-0 bg-brand/20 text-brand">
+      A
+    </div>
+    <!-- Text -->
+    <div class="min-w-0 flex-1">
+      <p class="text-white text-xs font-semibold leading-snug" id="sp-name">Abdul</p>
+      <p class="text-muted text-xs leading-snug mt-0.5" id="sp-action">baru saja membeli <span id="sp-product" class="text-white font-medium">Drone Config</span></p>
+      <p class="text-brand text-xs font-bold mt-0.5" id="sp-price">Rp 15.000</p>
+    </div>
+    <!-- Icon -->
+    <div class="shrink-0 w-8 h-8 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+      <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+  </div>
+  <!-- Time -->
+  <p class="text-right text-muted text-[10px] mt-1 pr-1" id="sp-time">beberapa saat lalu</p>
+</div>
+
+<script>
+  const NAMES = [
+    'Abdul', 'Rizky', 'Fajar', 'Dimas', 'Rendi', 'Hendra', 'Bagas', 'Arif',
+    'Wahyu', 'Andi', 'Budi', 'Agus', 'Faisal', 'Yoga', 'Gilang', 'Reza',
+    'Taufik', 'Dani', 'Ikhsan', 'Lutfi', 'Mahendra', 'Satria', 'Galih', 'Ferdi',
+    'Surya', 'Nanda', 'Rama', 'Angga', 'Vino', 'Yusuf',
+  ];
+
+  const PRODUCTS = [
+    { name: 'Config Drone', price: 15000 },
+    { name: 'Config Semi Fitur', price: 25000 },
+    { name: 'Config Full Fitur', price: 40000 },
+    { name: 'Config Drone + Semi', price: 35000 },
+    { name: 'Config Bundle Lengkap', price: 55000 },
+    { name: 'Paket Config 1 Bulan', price: 75000 },
+  ];
+
+  const TIMES = [
+    'beberapa saat lalu',
+    '1 menit lalu',
+    '2 menit lalu',
+    '3 menit lalu',
+    '5 menit lalu',
+    '7 menit lalu',
+    '10 menit lalu',
+  ];
+
+  const COLORS = [
+    'bg-brand/20 text-brand',
+    'bg-blue-500/20 text-blue-400',
+    'bg-purple-500/20 text-purple-400',
+    'bg-green-500/20 text-green-400',
+    'bg-pink-500/20 text-pink-400',
+  ];
+
+  const fmt = (n: number) =>
+    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+
+  const rand = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+  const toast    = document.getElementById('sp-toast')!;
+  const elName   = document.getElementById('sp-name')!;
+  const elProd   = document.getElementById('sp-product')!;
+  const elPrice  = document.getElementById('sp-price')!;
+  const elTime   = document.getElementById('sp-time')!;
+  const elAvatar = document.getElementById('sp-avatar')!;
+
+  function showToast() {
+    const name    = rand(NAMES);
+    const product = rand(PRODUCTS);
+    const time    = rand(TIMES);
+    const color   = rand(COLORS);
+
+    elName.textContent   = name;
+    elProd.textContent   = product.name;
+    elPrice.textContent  = fmt(product.price);
+    elTime.textContent   = time;
+    elAvatar.textContent = name.charAt(0);
+    elAvatar.className   = `w-10 h-10 rounded-full flex items-center justify-center font-black text-sm shrink-0 ${color}`;
+
+    // Show
+    toast.classList.remove('opacity-0', 'translate-y-4');
+    toast.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+    // Hide after 4.5s
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'translate-y-4');
+      toast.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+    }, 4500);
+  }
+
+  // First notif after 5–10 detik random, lalu interval 20–40 detik
+  function scheduleNext() {
+    const delay = 20000 + Math.random() * 20000;
+    setTimeout(() => {
+      showToast();
+      scheduleNext();
+    }, delay);
+  }
+
+  const firstDelay = 5000 + Math.random() * 5000;
+  setTimeout(() => {
+    showToast();
+    scheduleNext();
+  }, firstDelay);
+</script>

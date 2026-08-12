@@ -3,6 +3,7 @@ import BaseHead from '../components/layout/BaseHead.astro';
 import Navbar from '../components/layout/Navbar.astro';
 import Footer from '../components/layout/Footer.astro';
 import BottomNav from '../components/layout/BottomNav';
+import SocialProofToast from '../components/layout/SocialProofToast.astro';
 import '../styles/global.css';
 
 export interface Props {
@@ -68,5 +69,6 @@ if (user) {
       cartCount={cartCount}
       currentPath={new URL(Astro.request.url).pathname}
     />
+    <SocialProofToast />
   </body>
 </html>
