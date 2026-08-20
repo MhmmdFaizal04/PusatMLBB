@@ -1,10 +1,10 @@
 ﻿import { Client } from 'pg';
 
 const OLD_URL =
-  'postgresql://neondb_owner:npg_zjC6gPK0YViH@ep-bitter-sunset-aqi1xl19.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require';
+  'postgresql://neondb_owner:npg_gOG2H9jdKLJu@ep-young-surf-avvvfygb.c-11.us-east-1.aws.neon.tech/neondb?sslmode=require';
 
 const NEW_URL =
-  'postgresql://neondb_owner:npg_gOG2H9jdKLJu@ep-young-surf-avvvfygb.c-11.us-east-1.aws.neon.tech/neondb?sslmode=require';
+  'postgresql://neondb_owner:npg_SnMyV6qDNkd8@ep-spring-base-avu9tr3n.c-11.us-east-1.aws.neon.tech/neondb?sslmode=require';
 
 function log(msg: string) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
@@ -28,6 +28,9 @@ async function createSchema(db: Client) {
   await db.query(`CREATE TABLE IF NOT EXISTS order_keys (id SERIAL PRIMARY KEY, order_id UUID REFERENCES orders(id) ON DELETE CASCADE, code VARCHAR(20) NOT NULL, duration VARCHAR(20), product_name VARCHAR(255), generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
   await db.query(`CREATE TABLE IF NOT EXISTS app_version (id SERIAL PRIMARY KEY, force_update BOOLEAN NOT NULL DEFAULT FALSE, latest_version VARCHAR(20) NOT NULL DEFAULT '1.0', min_version VARCHAR(20) NOT NULL DEFAULT '1.0', download_url TEXT, message TEXT, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
   await db.query(`CREATE TABLE IF NOT EXISTS cheat_app_prices (product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE, duration VARCHAR(20) NOT NULL, price INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (product_id, duration))`);
+  await db.query(`CREATE TABLE IF NOT EXISTS config_links (key VARCHAR(50) PRIMARY KEY, label VARCHAR(100) NOT NULL, url TEXT, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
+  // Patch columns that may be missing from older schema runs
+  await db.query(`ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS min_purchase INTEGER NOT NULL DEFAULT 0`);
   log('Schema ready');
 }
 
@@ -39,13 +42,21 @@ async function copyTable(oldDb: Client, newDb: Client, tableName: string, orderB
     return;
   }
 
+  // Get columns that exist in the NEW DB table (destination-driven)
+  const colRes = await newDb.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_name = $1 ORDER BY ordinal_position`,
+    [tableName]
+  );
+  const newCols = new Set(colRes.rows.map((r: any) => r.column_name as string));
+
   const result = await oldDb.query(`SELECT * FROM "${tableName}" ORDER BY ${orderBy}`);
   const rows = result.rows;
   if (!rows.length) { log(`  ${tableName}: 0 rows`); return; }
 
-  log(`  ${tableName}: ${rows.length} rows - copying...`);
-  const cols = Object.keys(rows[0]);
+  // Only use columns present in both old and new
+  const cols = Object.keys(rows[0]).filter((c) => newCols.has(c));
   const colList = cols.map((c) => `"${c}"`).join(', ');
+  log(`  ${tableName}: ${rows.length} rows - copying...`);
   let n = 0;
   for (const row of rows) {
     const vals = cols.map((c) => row[c]);
@@ -81,6 +92,7 @@ async function main() {
     await copyTable(oldDb, newDb, 'redeem_codes', 'created_at');
     await copyTable(oldDb, newDb, 'device_vip', 'updated_at');
     await copyTable(oldDb, newDb, 'app_version', 'id');
+    await copyTable(oldDb, newDb, 'config_links', 'key');
     log('\n=== MIGRATION COMPLETE ===');
     log('Sekarang update DATABASE_URL di Vercel lalu redeploy.');
   } finally {
