@@ -4,7 +4,9 @@ import { sql } from '../../lib/db';
 
 const { id } = Astro.params;
 const rows = await sql`
-  SELECT p.*, c.name AS category_name, c.slug AS category_slug
+  SELECT p.id, p.name, p.description, p.price, p.stock, p.is_available,
+         p.image_url, p.category_id,
+         c.name AS category_name, c.slug AS category_slug
   FROM products p
   LEFT JOIN categories c ON c.id = p.category_id
   WHERE p.id = ${id!}

@@ -93,6 +93,21 @@ async function main() {
     await copyTable(oldDb, newDb, 'device_vip', 'updated_at');
     await copyTable(oldDb, newDb, 'app_version', 'id');
     await copyTable(oldDb, newDb, 'config_links', 'key');
+
+    // Reset SERIAL sequences so new inserts don't conflict with migrated IDs
+    log('\nResetting sequences...');
+    const seqs: [string, string][] = [
+      ['categories',   'categories_id_seq'],
+      ['order_keys',   'order_keys_id_seq'],
+      ['app_version',  'app_version_id_seq'],
+      ['visitor_logs', 'visitor_logs_id_seq'],
+    ];
+    for (const [table, seq] of seqs) {
+      const r = await newDb.query(`SELECT COALESCE(MAX(id), 1) AS m FROM "${table}"`);
+      await newDb.query(`SELECT setval('${seq}', ${r.rows[0].m})`);
+      log(`  ${seq} → ${r.rows[0].m}`);
+    }
+
     log('\n=== MIGRATION COMPLETE ===');
     log('Sekarang update DATABASE_URL di Vercel lalu redeploy.');
   } finally {

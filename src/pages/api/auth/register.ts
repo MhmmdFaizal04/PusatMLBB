@@ -1,8 +1,17 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
 import { hashPassword, signJWT } from '../../../lib/auth';
+import { rateLimit, getClientIp } from '../../../lib/rateLimit';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  // Rate limit: max 5 registrasi per IP per jam
+  const ip = getClientIp(request);
+  if (!rateLimit(`register:${ip}`, 5, 60 * 60 * 1000)) {
+    return new Response(JSON.stringify({ error: 'Terlalu banyak percobaan registrasi. Coba lagi dalam 1 jam.' }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json', 'Retry-After': '3600' },
+    });
+  }
   try {
     const body = await request.json();
     const { email, username, password } = body as {

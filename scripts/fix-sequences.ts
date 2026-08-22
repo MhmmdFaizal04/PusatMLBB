@@ -8,7 +8,7 @@
 import { Client } from 'pg';
 
 const NEW_URL =
-  'postgresql://neondb_owner:npg_gOG2H9jdKLJu@ep-young-surf-avvvfygb.c-11.us-east-1.aws.neon.tech/neondb?sslmode=require';
+  'postgresql://neondb_owner:npg_SnMyV6qDNkd8@ep-spring-base-avu9tr3n.c-11.us-east-1.aws.neon.tech/neondb?sslmode=require';
 
 async function main() {
   const db = new Client({ connectionString: NEW_URL, ssl: { rejectUnauthorized: false } });
