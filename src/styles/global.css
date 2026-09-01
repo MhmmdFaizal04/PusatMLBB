@@ -160,14 +160,13 @@ input:-webkit-autofill:focus {
   color: var(--color-text);
 }
 
-[class*="bg-brand"].text-white,
-[class*="bg-green-"].text-white,
-[class*="bg-red-"].text-white,
-[class*="bg-blue-"].text-white,
+/* Only genuinely opaque fills keep white text. Opacity tints such as
+   `bg-brand/5` or `bg-green-500/10` are nearly transparent, so text sitting on
+   them must follow the theme colour instead. */
+[class*="bg-brand"]:not([class*="bg-brand/"]).text-white,
 [class*="bg-black"].text-white,
-[class*="bg-brand"] .text-white,
-[class*="from-black"] .text-white,
-[class*="bg-black"] .text-white {
+[class*="bg-black"] .text-white,
+[class*="from-black"] .text-white {
   color: #fff;
 }
 
