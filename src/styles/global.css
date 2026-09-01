@@ -1,15 +1,41 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode (html.dark) instead of media query */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Design tokens — LIGHT mode is the default (blue + white) ───────────── */
 @theme {
-  --color-brand: #F97316;
-  --color-brand-hover: #EA6C0A;
-  --color-bg: #0A0A0A;
-  --color-surface: #111111;
-  --color-surface-2: #1A1A1A;
-  --color-surface-3: #222222;
-  --color-border: #2A2A2A;
-  --color-muted: #888888;
-  --font-sans: 'Bricolage Grotesque', 'Inter', system-ui, -apple-system, sans-serif;
+  --color-brand: #0000EE;
+  --color-brand-hover: #0000C4;
+  --color-bg: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F7FAFC;
+  --color-surface-3: #EFF3F8;
+  --color-border: #ECECEC;
+  --color-muted: #666666;
+  --color-faint: #6B7280;
+  --color-text: #000000;
+
+  --radius-pill: 100px;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --font-hand: 'Caveat', cursive;
+  --font-hand-display: 'Kalam', 'Caveat', cursive;
+}
+
+/* ─── DARK mode — blue + black ───────────────────────────────────────────── */
+.dark {
+  --color-brand: #6366F1;
+  --color-brand-hover: #818CF8;
+  --color-bg: #0C0E14;
+  --color-surface: #13161E;
+  --color-surface-2: #13161E;
+  --color-surface-3: #1E2230;
+  --color-border: #262A36;
+  --color-muted: #9CA3B0;
+  --color-faint: #8D8D8D;
+  --color-text: #F0F2F5;
 }
 
 html {
@@ -17,21 +43,137 @@ html {
 }
 
 body {
-  background-color: #0A0A0A;
-  color: #FFFFFF;
+  background-color: var(--color-bg);
+  color: var(--color-text);
   font-family: var(--font-sans);
   min-height: 100dvh;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+/* Inline handwritten accent (Caveat) — mirrors .ac-hand */
+.font-hand {
+  font-family: var(--font-hand);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  font-style: normal;
+}
+
+/* Absolute handwritten note / annotation (Caveat) — mirrors .ac-note */
+.font-note {
+  font-family: var(--font-hand);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-size: clamp(20px, 2.2vw, 28px);
+  line-height: 1.05;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Bolder handwritten display (Kalam) — for badges & callouts */
+.font-hand-display {
+  font-family: var(--font-hand-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Hero typography scale (mirrors .ac-h1 / .ac-hero-sub) ─────────────── */
+.hero-h1 {
+  font-size: clamp(40px, 6.4vw, 80px);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+}
+
+.hero-sub {
+  max-width: 620px;
+  font-size: clamp(17px, 1.4vw, 20px);
+  line-height: 1.55;
+}
+
+.hero-pad {
+  padding-block: clamp(56px, 7vw, 96px) clamp(32px, 4.5vw, 64px);
+}
+
+/* ─── Handwritten word + squiggle (mirrors .ac-hand-wrap / .ac-squiggle) ──── */
+.hand-wrap {
+  display: inline-block;
+  position: relative;
+}
+
+.squiggle {
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110%;
+  height: 14px;
+  color: var(--color-brand);
+  pointer-events: none;
+}
+
+/* ─── Theme toggle icons — deterministic, no variant-order issues ──────── */
+.theme-icon-sun { display: none; }
+.dark .theme-icon-sun { display: block; }
+.dark .theme-icon-moon { display: none; }
+
+/* Subtle grid backdrop for the hero section */
+.hero-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--color-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
+  background-size: 72px 72px;
+  opacity: 0.55;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 35%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 35%, transparent 100%);
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #111111; }
-::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #F97316; }
+::-webkit-scrollbar-track { background: var(--color-surface-2); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-brand); }
 
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0px 1000px #1A1A1A inset;
-  -webkit-text-fill-color: #FFFFFF;
-  caret-color: #FFFFFF;
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-surface-2) inset;
+  -webkit-text-fill-color: var(--color-text);
+  caret-color: var(--color-text);
+}
+
+/* ─── Legacy compatibility ───────────────────────────────────────────────
+   This site was originally dark-only, so `text-white` was used everywhere to
+   mean "primary text". On a white background that is invisible, so remap it to
+   the theme text colour — except where it sits on a genuinely dark/solid fill.
+   NOTE: light overlay gradients (from-surface-2, from-brand/5, …) must NOT be
+   treated as dark fills, or their text disappears in light mode. */
+.text-white {
+  color: var(--color-text);
+}
+
+[class*="bg-brand"].text-white,
+[class*="bg-green-"].text-white,
+[class*="bg-red-"].text-white,
+[class*="bg-blue-"].text-white,
+[class*="bg-black"].text-white,
+[class*="bg-brand"] .text-white,
+[class*="from-black"] .text-white,
+[class*="bg-black"] .text-white {
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

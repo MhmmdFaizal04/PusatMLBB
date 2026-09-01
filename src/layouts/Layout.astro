@@ -4,6 +4,7 @@ import Navbar from '../components/layout/Navbar.astro';
 import Footer from '../components/layout/Footer.astro';
 import BottomNav from '../components/layout/BottomNav';
 import SocialProofToast from '../components/layout/SocialProofToast.astro';
+import ThemeToggle from '../components/layout/ThemeToggle.astro';
 import '../styles/global.css';
 
 export interface Props {
@@ -55,8 +56,12 @@ if (user) {
       }
     </script>
   </head>
-  <body class={`bg-bg text-white min-h-dvh flex flex-col ${bodyClass}`}>
+  <body class={`bg-bg text-text min-h-dvh flex flex-col ${bodyClass}`}>
     <Navbar user={user} cartCount={cartCount} />
+
+    <!-- Floating theme toggle for mobile (no top navbar on small screens) -->
+    <ThemeToggle class="md:hidden fixed top-3 right-3 z-50 shadow-lg backdrop-blur bg-surface-2/90" />
+
     <main class="flex-1 pb-20 md:pb-0">
       <slot />
     </main>
@@ -70,5 +75,31 @@ if (user) {
       currentPath={new URL(Astro.request.url).pathname}
     />
     <SocialProofToast />
+
+    <!-- Theme toggle behaviour -->
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        var meta = document.getElementById('meta-theme-color');
+
+        function apply(isDark) {
+          root.classList.toggle('dark', isDark);
+          root.style.colorScheme = isDark ? 'dark' : 'light';
+          if (meta) meta.setAttribute('content', isDark ? '#04070D' : '#FFFFFF');
+        }
+
+        apply(root.classList.contains('dark'));
+
+        document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var next = !root.classList.contains('dark');
+            apply(next);
+            try {
+              localStorage.setItem('theme', next ? 'dark' : 'light');
+            } catch (e) {}
+          });
+        });
+      })();
+    </script>
   </body>
 </html>

@@ -121,7 +121,7 @@ export default function BottomNav({ isLoggedIn, role, cartCount, currentPath }: 
                 key={link.href}
                 href={link.href}
                 className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-0 ${
-                  isActive ? 'text-brand' : 'text-muted hover:text-white'
+                  isActive ? 'text-brand' : 'text-muted hover:text-text'
                 }`}
               >
                 <span className="relative">{link.icon}</span>
@@ -157,7 +157,7 @@ export default function BottomNav({ isLoggedIn, role, cartCount, currentPath }: 
               key={link.href}
               href={link.href}
               className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-0 ${
-                isActive ? 'text-brand' : 'text-muted hover:text-white'
+                isActive ? 'text-brand' : 'text-muted hover:text-text'
               }`}
             >
               <span className="relative">
@@ -175,7 +175,7 @@ export default function BottomNav({ isLoggedIn, role, cartCount, currentPath }: 
         {!isLoggedIn && (
           <a
             href="/login"
-            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-muted hover:text-white transition-colors"
+            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-muted hover:text-text transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

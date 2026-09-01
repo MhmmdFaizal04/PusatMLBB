@@ -24,32 +24,62 @@ const fmt = (p: number) =>
   canonicalPath="/"
 >
   <!-- Hero -->
-  <section class="relative overflow-hidden border-b border-border">
-    <div class="absolute inset-0 bg-gradient-to-br from-brand/5 via-transparent to-transparent pointer-events-none"></div>
-    <div class="max-w-7xl mx-auto px-4 py-16 md:py-24 flex flex-col items-center text-center gap-6">
-      <span class="inline-flex items-center gap-2 text-xs font-semibold bg-brand/10 text-brand px-3 py-1.5 rounded-full border border-brand/20">
-        Update Terbaru 2025
-      </span>
-      <h1 class="text-4xl md:text-6xl font-black leading-tight tracking-tight">
-        Jual Cheat Mobile Legends<br />
-        <span class="text-brand">Anti Banned Terpercaya</span>
+  <section class="hero-grid hero-pad relative overflow-hidden border-b border-border">
+
+    <div class="relative max-w-5xl mx-auto px-4 flex flex-col items-center text-center">
+
+      <!-- Announcement pill -->
+      <a href="/products" id="hero-pill" class="inline-flex items-center gap-2.5 bg-surface border border-border rounded-pill pl-2 pr-3.5 py-1.5 mb-7 text-[13px] font-medium text-muted shadow-sm hover:border-brand/40 transition-colors">
+        <span class="bg-brand text-white font-bold text-[11px] uppercase tracking-[0.02em] px-2.5 py-[3px] rounded-pill">Baru</span>
+        <span>Cheat ML terlengkap — anti-banned, update tiap patch</span>
+        <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+      </a>
+
+      <h1 id="hero-title" class="hero-h1 relative text-text max-w-4xl">
+
+        <!-- Handwritten arrow annotation -->
+        <span id="anno-arrow" class="hidden md:flex absolute -top-10 left-0 lg:-left-8 items-start gap-0 pointer-events-none select-none">
+          <span class="font-note text-brand rotate-[-9deg] origin-bottom-right">anti&nbsp;banned!</span>
+          <svg class="w-14 h-11 text-brand -mt-1" viewBox="0 0 70 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path class="scribble-path" d="M4,42 C14,12 42,2 62,16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+            <path class="scribble-path" d="M47,7 L63,15 L53,28" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+
+        Cheat Mobile Legends untuk<br />
+        <span class="hand-wrap">
+          <span class="font-hand text-brand">pemain</span>
+          <!-- Wavy scribble underline -->
+          <svg class="squiggle" viewBox="0 0 200 14" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path id="scribble-underline" d="M3,9 C20,2 33,14 50,8 C67,2 80,14 98,8 C115,2 130,13 148,7 C165,2 182,11 197,6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </span> serius.
       </h1>
-      <p class="text-muted text-base md:text-lg max-w-xl">
-        Cheat Mobile Legends terlengkap &amp; selalu update. Aman, cepat, harga terjangkau.
+
+      <p id="hero-sub" class="hero-sub text-muted mt-7">
+        Satu tempat untuk semua cheat Mobile Legends — aman, selalu update tiap patch, proses instan setelah pembayaran.
       </p>
-      <div class="flex items-center gap-3 flex-wrap justify-center">
-        <a href="/products" class="px-6 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors text-sm">
+
+      <div id="hero-cta" class="flex items-center gap-3 flex-wrap justify-center mt-8">
+        <a href="/products" class="inline-flex items-center gap-2 px-6 py-3.5 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-all text-sm shadow-[0_4px_14px_-4px] shadow-brand/50 hover:-translate-y-px">
           Lihat Semua Produk
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m0 0l-6-6m6 6l-6 6"/></svg>
         </a>
-        <a href="/register" class="px-6 py-3 border border-border hover:border-brand/40 text-white font-semibold rounded-xl transition-colors text-sm">
+        <a href="/register" class="px-6 py-3.5 bg-surface border border-border hover:border-brand/40 text-text font-semibold rounded-xl transition-all text-sm hover:-translate-y-px">
           Daftar Gratis
         </a>
+        <!-- Dotted handwritten badge -->
+        <span id="anno-badge" class="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-pill border-[1.5px] border-dashed border-brand/50 text-brand">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.3 6.2 19.8l1.6-6.6L2.6 8.8l6.8-.5L12 2z"/></svg>
+          <span class="font-hand-display text-lg leading-none">tanpa ribet</span>
+        </span>
       </div>
-      <div class="flex items-center gap-8 pt-4 text-sm">
+
+      <div id="hero-stats" class="flex items-center gap-7 md:gap-10 mt-10 flex-wrap justify-center">
         {[['500+','Customer'],['99%','Kepuasan'],['24/7','Support']].map(([val,label]) => (
           <div class="text-center">
-            <p class="font-bold text-white text-xl">{val}</p>
-            <p class="text-muted">{label}</p>
+            <p class="font-extrabold text-text text-2xl tracking-[-0.03em] leading-[1.1] tabular-nums">{val}</p>
+            <p class="text-faint text-[11.5px] font-medium mt-1">{label}</p>
           </div>
         ))}
       </div>
@@ -105,7 +135,7 @@ const fmt = (p: number) =>
   <!-- Products Grid -->
   <section class="max-w-7xl mx-auto px-4 pb-12">
     <div class="flex items-center justify-between mb-6">
-      <h2 class="text-xl font-bold text-white">Produk Terbaru</h2>
+      <h2 class="text-xl font-bold text-text">Produk Terbaru</h2>
       <a href="/products" class="text-sm text-brand hover:underline">Lihat semua</a>
     </div>
     {featuredProducts.length === 0 ? (
@@ -125,7 +155,7 @@ const fmt = (p: number) =>
             </div>
             <div class="p-3">
               {p.category_name && <span class="text-[10px] font-semibold text-brand uppercase tracking-wide">{p.category_name}</span>}
-              <h3 class="text-sm font-semibold text-white mt-0.5 line-clamp-2">{p.name}</h3>
+              <h3 class="text-sm font-semibold text-text mt-0.5 line-clamp-2">{p.name}</h3>
               <div class="flex items-center justify-between mt-2">
                 <span class="text-brand font-bold text-sm">{fmt(p.price)}</span>
                 {p.stock > 0 ? (
@@ -148,7 +178,7 @@ const fmt = (p: number) =>
   <!-- How to order -->
   <section class="border-t border-border bg-surface">
     <div class="max-w-7xl mx-auto px-4 py-12">
-      <h2 class="text-xl font-bold text-white text-center mb-8">Cara Pembelian</h2>
+      <h2 class="text-xl font-bold text-text text-center mb-8">Cara Pembelian</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
         {[
           ['01','Pilih Produk','Browse produk dan tambah ke keranjang'],
@@ -159,7 +189,7 @@ const fmt = (p: number) =>
           <div class="flex flex-col items-center text-center gap-3">
             <span class="w-10 h-10 rounded-xl bg-brand/10 border border-brand/20 text-brand font-black text-sm flex items-center justify-center">{step}</span>
             <div>
-              <p class="font-semibold text-white text-sm">{title}</p>
+              <p class="font-semibold text-text text-sm">{title}</p>
               <p class="text-muted text-xs mt-0.5">{desc}</p>
             </div>
           </div>
@@ -175,17 +205,73 @@ const fmt = (p: number) =>
 
   gsap.registerPlugin(ScrollTrigger);
 
-  // ─── Hero ─────────────────────────────────────────────────────────────────────
-  const heroSection = document.querySelector('section');
-  if (heroSection) {
-    const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-    heroTl
-      .from('section:first-of-type span.inline-flex', { opacity: 0, y: 20, duration: 0.5 })
-      .from('section:first-of-type h1', { opacity: 0, y: 40, duration: 0.7 }, '-=0.2')
-      .from('section:first-of-type p.text-muted', { opacity: 0, y: 20, duration: 0.5 }, '-=0.4')
-      .from('section:first-of-type .flex.items-center.gap-3', { opacity: 0, y: 20, duration: 0.5 }, '-=0.3')
-      .from('section:first-of-type .flex.items-center.gap-8', { opacity: 0, y: 15, duration: 0.4 }, '-=0.2');
+  // ─── SVG Scribble draw animations ──────────────────────────────────────────────
+  // Draw each scribble path using the stroke-dashoffset technique
+  const scribblePaths = document.querySelectorAll<SVGPathElement>('.scribble-path');
+  scribblePaths.forEach((path, i) => {
+    const len = path.getTotalLength();
+    gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
+    gsap.to(path, {
+      strokeDashoffset: 0,
+      duration: 0.55,
+      ease: 'power2.inOut',
+      delay: 0.9 + i * 0.22,
+    });
+  });
+
+  // Handwritten arrow label fades/rotates in with the stroke
+  gsap.from('#anno-arrow span', {
+    opacity: 0,
+    x: -14,
+    rotate: -22,
+    duration: 0.6,
+    ease: 'back.out(1.7)',
+    delay: 1.35,
+  });
+
+  // Wavy underline draws after the headline appears
+  const underline = document.querySelector<SVGPathElement>('#scribble-underline');
+  if (underline) {
+    const len = underline.getTotalLength();
+    gsap.set(underline, { strokeDasharray: len, strokeDashoffset: len });
+    gsap.to(underline, {
+      strokeDashoffset: 0,
+      duration: 0.9,
+      ease: 'power3.inOut',
+      delay: 0.85,
+    });
   }
+
+  // Dotted "tanpa ribet" badge pops in, then breathes
+  const badge = document.querySelector('#anno-badge');
+  if (badge) {
+    gsap.from(badge, {
+      opacity: 0,
+      scale: 0.75,
+      rotate: -6,
+      duration: 0.6,
+      ease: 'back.out(2)',
+      delay: 1.5,
+    });
+    gsap.to(badge, {
+      rotate: 2,
+      y: -3,
+      duration: 2.6,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: 2.2,
+    });
+  }
+
+  // ─── Hero ─────────────────────────────────────────────────────────────────────
+  const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+  heroTl
+    .from('#hero-pill', { opacity: 0, y: 20, duration: 0.5 })
+    .from('#hero-title', { opacity: 0, y: 40, duration: 0.7 }, '-=0.2')
+    .from('#hero-sub', { opacity: 0, y: 20, duration: 0.5 }, '-=0.4')
+    .from('#hero-cta > a', { opacity: 0, y: 20, duration: 0.5, stagger: 0.08 }, '-=0.3')
+    .from('#hero-stats > div', { opacity: 0, y: 15, duration: 0.4, stagger: 0.08 }, '-=0.2');
 
   // ─── Product cards ─────────────────────────────────────────────────────────────
   gsap.utils.toArray<HTMLElement>('.grid.grid-cols-2 > a').forEach((card, i) => {

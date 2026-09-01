@@ -1,4 +1,6 @@
 ---
+import ThemeToggle from './ThemeToggle.astro';
+
 export interface Props {
   user?: { username: string; role: string } | null;
   cartCount?: number;
@@ -12,11 +14,11 @@ const navLinks = [
 ];
 ---
 
-<header class="hidden md:block sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-border">
-  <nav class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-6">
-    <!-- Logo -->
-    <a href="/" class="flex items-center gap-2 font-bold text-xl shrink-0">
-      <span class="text-brand">Pusat</span><span class="text-white">MLBB</span>
+<header class="hidden md:block sticky top-0 z-50 bg-surface/85 backdrop-blur-[14px] backdrop-saturate-[180%] border-b border-border">
+  <nav class="max-w-7xl mx-auto px-4 h-[72px] flex items-center justify-between gap-6">
+    <!-- Logo — bold display word + handwritten accent word -->
+    <a href="/" class="inline-flex items-baseline shrink-0 font-display text-[19px] font-bold tracking-[-0.025em] text-text">
+      <span>Pusat</span><span class="font-hand text-brand text-[22px] leading-none ml-1">MLBB</span>
     </a>
 
     <!-- Nav links -->
@@ -24,10 +26,10 @@ const navLinks = [
       {navLinks.map((link) => (
         <a
           href={link.href}
-          class={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          class={`px-3.5 py-2 rounded-pill text-sm font-medium transition-colors ${
             path === link.href
-              ? 'bg-brand/10 text-brand'
-              : 'text-muted hover:text-white hover:bg-surface-3'
+              ? 'bg-surface-2 text-text'
+              : 'text-muted hover:text-text hover:bg-surface-2'
           }`}
         >
           {link.label}
@@ -37,10 +39,11 @@ const navLinks = [
 
     <!-- Right side -->
     <div class="flex items-center gap-3">
+      <ThemeToggle />
       {user ? (
         <>
           {/* Cart */}
-          <a href="/cart" class="relative p-2 text-muted hover:text-white transition-colors" aria-label="Keranjang">
+          <a href="/cart" class="relative p-2 text-muted hover:text-text transition-colors" aria-label="Keranjang">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -54,7 +57,7 @@ const navLinks = [
 
           {/* User dropdown */}
           <div class="relative group">
-            <button class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-surface-3 transition-colors">
+            <button class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-text hover:bg-surface-3 transition-colors">
               <span class="w-7 h-7 rounded-full bg-brand/20 text-brand flex items-center justify-center font-bold text-xs uppercase">
                 {user.username.charAt(0)}
               </span>
@@ -65,17 +68,17 @@ const navLinks = [
             </button>
             <div class="absolute right-0 top-full mt-1 w-44 bg-surface-2 border border-border rounded-xl shadow-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
               {user.role === 'admin' && (
-                <a href="/admin" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-white hover:bg-surface-3 transition-colors">
+                <a href="/admin" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-text hover:bg-surface-3 transition-colors">
                   Dashboard Admin
                 </a>
               )}
-              <a href="/orders" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-white hover:bg-surface-3 transition-colors">
+              <a href="/orders" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-text hover:bg-surface-3 transition-colors">
                 Pesanan Saya
               </a>
-              <a href="/files" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-white hover:bg-surface-3 transition-colors">
+              <a href="/files" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-text hover:bg-surface-3 transition-colors">
                 File Saya
               </a>
-              <a href="/profile" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-white hover:bg-surface-3 transition-colors">
+              <a href="/profile" class="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-text hover:bg-surface-3 transition-colors">
                 Profil
               </a>
               <div class="border-t border-border my-1"></div>
@@ -90,7 +93,7 @@ const navLinks = [
         </>
       ) : (
         <>
-          <a href="/login" class="px-4 py-2 text-sm font-medium text-muted hover:text-white transition-colors">
+          <a href="/login" class="px-4 py-2 text-sm font-medium text-muted hover:text-text transition-colors">
             Masuk
           </a>
           <a href="/register" class="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-lg transition-colors">

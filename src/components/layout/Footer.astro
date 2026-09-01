@@ -10,7 +10,7 @@ const year = new Date().getFullYear();
       <div class="md:col-span-1">
         <a href="/" class="flex items-center gap-2 mb-3 w-fit">
           <div class="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white font-black text-sm">M</div>
-          <span class="font-black text-lg text-white tracking-tight">PusatMLBB</span>
+          <span class="font-black text-lg text-text tracking-tight">PusatMLBB</span>
         </a>
         <p class="text-muted text-sm leading-relaxed">
           Pusat jual cheat Mobile Legends terpercaya. Aman, update rutin, harga terjangkau.
@@ -31,8 +31,9 @@ const year = new Date().getFullYear();
 
       <!-- Navigasi -->
       <div>
-        <h3 class="text-white font-bold text-sm mb-4 uppercase tracking-wider">Navigasi</h3>
+        <h3 class="text-text font-bold text-sm mb-4 uppercase tracking-wider">Navigasi</h3>
         <ul class="space-y-2.5">
+          {/* Navigasi links */}
           {[
             { href: '/', label: 'Beranda' },
             { href: '/products', label: 'Semua Produk' },
@@ -40,7 +41,7 @@ const year = new Date().getFullYear();
             { href: '/register', label: 'Daftar' },
           ].map((link) => (
             <li>
-              <a href={link.href} class="text-muted hover:text-white text-sm transition-colors">
+              <a href={link.href} class="text-muted hover:text-text text-sm transition-colors">
                 {link.label}
               </a>
             </li>
@@ -50,7 +51,7 @@ const year = new Date().getFullYear();
 
       <!-- Akun -->
       <div>
-        <h3 class="text-white font-bold text-sm mb-4 uppercase tracking-wider">Akun Saya</h3>
+        <h3 class="text-text font-bold text-sm mb-4 uppercase tracking-wider">Akun Saya</h3>
         <ul class="space-y-2.5">
           {[
             { href: '/orders', label: 'Riwayat Pesanan' },
@@ -59,7 +60,7 @@ const year = new Date().getFullYear();
             { href: '/cart', label: 'Keranjang' },
           ].map((link) => (
             <li>
-              <a href={link.href} class="text-muted hover:text-white text-sm transition-colors">
+              <a href={link.href} class="text-muted hover:text-text text-sm transition-colors">
                 {link.label}
               </a>
             </li>
@@ -69,7 +70,7 @@ const year = new Date().getFullYear();
 
       <!-- Info -->
       <div>
-        <h3 class="text-white font-bold text-sm mb-4 uppercase tracking-wider">Informasi</h3>
+        <h3 class="text-text font-bold text-sm mb-4 uppercase tracking-wider">Informasi</h3>
         <ul class="space-y-3">
           <li class="flex items-start gap-2 text-sm text-muted">
             <svg class="w-4 h-4 text-brand mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +104,7 @@ const year = new Date().getFullYear();
     <!-- Divider & Bottom bar -->
     <div class="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
       <p class="text-muted text-xs">
-        &copy; {year} <span class="text-white font-semibold">PusatMLBB</span>. Hak cipta dilindungi.
+        &copy; {year} <span class="text-text font-semibold">PusatMLBB</span>. Hak cipta dilindungi.
       </p>
       <div class="flex items-center gap-1.5">
         <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>

@@ -1,0 +1,23 @@
+---
+export interface Props {
+  class?: string;
+}
+const { class: className = '' } = Astro.props;
+---
+
+<button
+  type="button"
+  data-theme-toggle
+  aria-label="Ganti mode terang / gelap"
+  title="Ganti mode terang / gelap"
+  class={`relative grid place-items-center w-9 h-9 rounded-pill border border-border bg-transparent text-muted hover:text-text hover:bg-surface-2 hover:border-faint transition-colors ${className}`}
+>
+  <!-- Moon (shown in light mode → click to go dark) -->
+  <svg class="theme-icon-moon w-[17px] h-[17px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+  </svg>
+  <!-- Sun (shown in dark mode → click to go light) -->
+  <svg class="theme-icon-sun w-[17px] h-[17px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1.5M12 19.5V21M4.22 4.22l1.06 1.06M18.72 18.72l1.06 1.06M3 12h1.5M19.5 12H21M4.22 19.78l1.06-1.06M18.72 5.28l1.06-1.06M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+  </svg>
+</button>
