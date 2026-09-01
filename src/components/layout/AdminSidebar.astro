@@ -61,20 +61,20 @@ const links = [
 >
   <!-- Logo -->
   <div class="h-16 flex items-center px-6 border-b border-border shrink-0">
-    <a href="/" class="font-bold text-xl">
-      <span class="text-brand">Pusat</span><span class="text-white">MLBB</span>
+    <a href="/" class="inline-flex items-baseline font-display text-[19px] font-bold tracking-[-0.025em] text-text">
+      <span>Pusat</span><span class="font-hand text-brand text-[22px] leading-none ml-1">MLBB</span>
     </a>
-    <span class="ml-2 text-xs font-medium bg-brand/20 text-brand px-2 py-0.5 rounded-full">Admin</span>
+    <span class="ml-2 text-xs font-medium bg-brand/10 text-brand px-2 py-0.5 rounded-full">Admin</span>
   </div>
 
   <!-- User -->
   <div class="px-4 py-3 border-b border-border shrink-0">
     <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-full bg-brand/20 text-brand flex items-center justify-center font-bold text-sm uppercase shrink-0">
+      <div class="w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold text-sm uppercase shrink-0">
         {username.charAt(0)}
       </div>
       <div class="min-w-0">
-        <p class="text-sm font-medium text-white truncate">{username}</p>
+        <p class="text-sm font-medium text-text truncate">{username}</p>
         <p class="text-xs text-muted">Administrator</p>
       </div>
     </div>
@@ -90,7 +90,7 @@ const links = [
           class={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-0.5 transition-colors ${
             isActive
               ? 'bg-brand/10 text-brand'
-              : 'text-muted hover:text-white hover:bg-surface-3'
+              : 'text-muted hover:text-text hover:bg-surface-2'
           }`}
         >
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"

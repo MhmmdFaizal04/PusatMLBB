@@ -171,6 +171,13 @@ input:-webkit-autofill:focus {
   color: #fff;
 }
 
+/* Hover / group-hover variants of the same legacy utility. These are never used
+   on a filled colour block, so they always map to the theme text colour. */
+.hover\:text-white:hover,
+.group:hover .group-hover\:text-white {
+  color: var(--color-text);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

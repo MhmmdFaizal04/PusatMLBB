@@ -270,7 +270,14 @@ const fmt = (p: number) =>
     .from('#hero-pill', { opacity: 0, y: 20, duration: 0.5 })
     .from('#hero-title', { opacity: 0, y: 40, duration: 0.7 }, '-=0.2')
     .from('#hero-sub', { opacity: 0, y: 20, duration: 0.5 }, '-=0.4')
-    .from('#hero-cta > a', { opacity: 0, y: 20, duration: 0.5, stagger: 0.08 }, '-=0.3')
+    // fromTo + clearProps: a plain .from() here could be reverted to its start
+    // state by ScrollTrigger.refresh() on window load and stay invisible.
+    .fromTo(
+      '#hero-cta > a',
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, clearProps: 'opacity,transform' },
+      '-=0.3'
+    )
     .from('#hero-stats > div', { opacity: 0, y: 15, duration: 0.4, stagger: 0.08 }, '-=0.2');
 
   // ─── Product cards ─────────────────────────────────────────────────────────────
