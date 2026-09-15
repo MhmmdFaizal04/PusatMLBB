@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
+import { rateLimit, getClientIp } from '../../../lib/rateLimit';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
@@ -11,11 +12,20 @@ function normalizeTier(raw: string): 'free' | 'vip1' | 'vip2' {
 }
 
 // GET /api/device/[deviceId]
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, request }) => {
+  const ip = getClientIp(request);
+  if (!rateLimit(`device:${ip}`, 60, 60 * 1000)) {
+    return new Response(JSON.stringify({ error: 'Terlalu banyak permintaan' }), {
+      status: 429,
+      headers: { ...JSON_HEADERS, 'Retry-After': '60' },
+    });
+  }
+
   const deviceId = String(params.deviceId ?? '').trim();
 
-  if (!deviceId)
-    return new Response(JSON.stringify({ error: 'deviceId wajib diisi' }), { status: 400, headers: JSON_HEADERS });
+  if (!deviceId || deviceId.length < 6 || deviceId.length > 100 || !/^[a-zA-Z0-9_-]+$/.test(deviceId)) {
+    return new Response(JSON.stringify({ error: 'deviceId tidak valid' }), { status: 400, headers: JSON_HEADERS });
+  }
 
   try {
     const rows = await sql`
@@ -23,12 +33,7 @@ export const GET: APIRoute = async ({ params }) => {
     `;
 
     if (rows.length === 0) {
-      // AUTO-CREATE device with free tier — never return 401 for unknown device
-      await sql`
-        INSERT INTO device_vip (device_id, tier, vip_until, updated_at)
-        VALUES (${deviceId}, 'free', NULL, NOW())
-        ON CONFLICT (device_id) DO NOTHING
-      `;
+      // Default free tier response without polluting database storage
       return new Response(
         JSON.stringify({ deviceId, tier: 'free', isVip: false, vipUntil: null }),
         { status: 200, headers: JSON_HEADERS }

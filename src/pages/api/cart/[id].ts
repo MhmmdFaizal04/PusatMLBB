@@ -5,11 +5,10 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
   if (!locals.user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   try {
     const { quantity } = await request.json();
-    if (!quantity || quantity < 1) {
-      return new Response(JSON.stringify({ error: 'Jumlah tidak valid' }), { status: 400 });
-    }
+    const qty = Math.max(1, Math.min(100, Math.floor(Number(quantity) || 1)));
+
     await sql`
-      UPDATE cart_items SET quantity = ${quantity}
+      UPDATE cart_items SET quantity = ${qty}
       WHERE id = ${params.id!} AND user_id = ${locals.user.userId}
     `;
     return new Response(JSON.stringify({ ok: true }), { status: 200 });

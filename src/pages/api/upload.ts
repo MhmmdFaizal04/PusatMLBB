@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { uploadToCloudinary } from '../../lib/cloudinary';
+import { rateLimit, getClientIp } from '../../lib/rateLimit';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -26,10 +27,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   }
+
+  // Rate limit: max 10 uploads per 10 minutes per user/IP
+  const ip = getClientIp(request);
+  if (!rateLimit(`upload:${locals.user.userId}:${ip}`, 10, 10 * 60 * 1000)) {
+    return new Response(
+      JSON.stringify({ error: 'Terlalu banyak upload. Coba lagi dalam 10 menit.' }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '600' } }
+    );
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const folder = formData.get('folder')?.toString() || 'uploads';
+    const requestedFolder = formData.get('folder')?.toString() || 'proofs';
+
+    // Only admin can upload to products or qris folders; customers are strictly limited to proofs
+    const isAdmin = locals.user.role === 'admin';
+    const safeFolder = isAdmin && ['products', 'qris'].includes(requestedFolder)
+      ? requestedFolder
+      : 'proofs';
 
     if (!file || file.size === 0) {
       return new Response(JSON.stringify({ error: 'File tidak ditemukan' }), { status: 400 });
@@ -53,10 +70,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
         { status: 400 },
       );
     }
-
-    // Only allow safe folder names
-    const safeFolders = ['proofs', 'products', 'qris'];
-    const safeFolder = safeFolders.includes(folder) ? folder : 'uploads';
 
     const { url, publicId } = await uploadToCloudinary(buffer, safeFolder);
 

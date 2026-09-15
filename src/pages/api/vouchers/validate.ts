@@ -1,10 +1,20 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
+import { rateLimit, getClientIp } from '../../../lib/rateLimit';
 
 // POST /api/vouchers/validate — validate voucher code for current cart
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user)
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+
+  // Rate limit: max 15 voucher checks per minute per IP to prevent brute forcing
+  const ip = getClientIp(request);
+  if (!rateLimit(`voucher:${ip}`, 15, 60 * 1000)) {
+    return new Response(
+      JSON.stringify({ error: 'Terlalu banyak mencoba kode voucher. Coba lagi sebentar lagi.' }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '60' } }
+    );
+  }
 
   try {
     const { code } = await request.json();

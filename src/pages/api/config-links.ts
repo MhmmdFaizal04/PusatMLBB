@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../lib/db';
+import { rateLimit, getClientIp } from '../../lib/rateLimit';
 
 const CONFIGS = [
   { key: 'drone', label: 'Drone' },
@@ -7,7 +8,10 @@ const CONFIGS = [
   { key: 'full_fitur', label: 'Full Fitur' },
 ];
 
+let tableInitialized = false;
+
 async function ensureTable() {
+  if (tableInitialized) return;
   await sql`
     CREATE TABLE IF NOT EXISTS config_links (
       key VARCHAR(50) PRIMARY KEY,
@@ -24,10 +28,16 @@ async function ensureTable() {
       ON CONFLICT (key) DO NOTHING
     `;
   }
+  tableInitialized = true;
 }
 
 // GET /api/config-links — public, diakses aplikasi Android
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
+  const ip = getClientIp(request);
+  if (!rateLimit(`config-links:${ip}`, 120, 60 * 1000)) {
+    return new Response(JSON.stringify({ error: 'Terlalu banyak permintaan' }), { status: 429 });
+  }
+
   try {
     await ensureTable();
     const rows = await sql`SELECT key, url FROM config_links ORDER BY key`;
@@ -66,8 +76,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ error: 'Key tidak valid' }), { status: 400 });
   }
 
-  if (url && !url.startsWith('http')) {
-    return new Response(JSON.stringify({ error: 'URL harus diawali http/https' }), { status: 400 });
+  if (url && !/^https?:\/\/[^\s$.?#].[^\s]*$/i.test(url)) {
+    return new Response(JSON.stringify({ error: 'URL harus diawali http:// atau https:// dan valid' }), { status: 400 });
   }
 
   try {

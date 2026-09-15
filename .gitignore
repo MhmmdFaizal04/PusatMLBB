@@ -24,3 +24,8 @@ pnpm-debug.log*
 .idea/
 .vercel
 .env*
+
+# agents & skills
+.agents/
+skills-lock.json
+

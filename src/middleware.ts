@@ -51,14 +51,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   // Guard: admin routes
-  if (pathname.startsWith('/admin')) {
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     if (!user || user.role !== 'admin') {
       return redirect('/login?redirect=' + encodeURIComponent(pathname));
     }
   }
 
   // Guard: API admin routes
-  if (pathname.startsWith('/api/admin/')) {
+  if (pathname === '/api/admin' || pathname.startsWith('/api/admin/')) {
     if (!user || user.role !== 'admin') {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -73,8 +73,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return redirect('/login?redirect=' + encodeURIComponent(pathname));
   }
 
-  // Guard: auth-required API routes
-  const authApiPrefixes = ['/api/cart', '/api/orders', '/api/upload'];
+  // Guard: auth-required API routes (defense-in-depth)
+  const authApiPrefixes = ['/api/cart', '/api/orders', '/api/upload', '/api/files', '/api/profile', '/api/vouchers/validate'];
   if (authApiPrefixes.some((p) => pathname.startsWith(p)) && !user) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -89,6 +89,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (import.meta.env.PROD) {
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
   response.headers.set(
     'Content-Security-Policy',
     [

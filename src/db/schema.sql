@@ -1,5 +1,5 @@
--- PusatMLBB Database Schema
--- Run this in your Neon PostgreSQL console
+-- PusatMLBB Complete Database Schema
+-- Run this via `npm run migrate` or in your Neon PostgreSQL console
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -30,8 +30,29 @@ CREATE TABLE IF NOT EXISTS products (
   image_url TEXT,
   image_public_id TEXT,
   download_link TEXT,
+  cheat_duration VARCHAR(20) DEFAULT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS vouchers (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code VARCHAR(50) UNIQUE NOT NULL,
+  discount_type VARCHAR(20) NOT NULL,
+  discount_value INTEGER NOT NULL,
+  min_purchase INTEGER NOT NULL DEFAULT 0,
+  max_uses INTEGER,
+  used_count INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  applies_to VARCHAR(50),
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS voucher_products (
+  voucher_id UUID NOT NULL REFERENCES vouchers(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  PRIMARY KEY (voucher_id, product_id)
 );
 
 CREATE TABLE IF NOT EXISTS cart_items (
@@ -39,6 +60,7 @@ CREATE TABLE IF NOT EXISTS cart_items (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  cheat_duration VARCHAR(20) DEFAULT NULL,
   UNIQUE(user_id, product_id)
 );
 
@@ -46,6 +68,8 @@ CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   total_amount INTEGER NOT NULL,
+  discount_amount INTEGER NOT NULL DEFAULT 0,
+  voucher_id UUID REFERENCES vouchers(id) ON DELETE SET NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pending_approval'
     CHECK (status IN ('pending_payment', 'pending_approval', 'approved', 'rejected')),
   proof_image_url TEXT,
@@ -62,13 +86,16 @@ CREATE TABLE IF NOT EXISTS order_items (
   product_id UUID REFERENCES products(id) ON DELETE SET NULL,
   quantity INTEGER NOT NULL,
   price_at_purchase INTEGER NOT NULL,
-  product_name VARCHAR(255) NOT NULL
+  product_name VARCHAR(255) NOT NULL,
+  cheat_duration VARCHAR(20) DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS qris_settings (
   id INTEGER PRIMARY KEY DEFAULT 1,
   image_url TEXT,
   public_id TEXT,
+  bypass_link TEXT,
+  tutorial_video_url TEXT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -79,6 +106,55 @@ CREATE TABLE IF NOT EXISTS visitor_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS redeem_codes (
+  code VARCHAR(20) PRIMARY KEY,
+  duration VARCHAR(20) NOT NULL,
+  used BOOLEAN NOT NULL DEFAULT FALSE,
+  used_by VARCHAR(150),
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS device_vip (
+  device_id VARCHAR(150) PRIMARY KEY,
+  vip_until TIMESTAMPTZ,
+  tier VARCHAR(20) NOT NULL DEFAULT 'free',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS order_keys (
+  id SERIAL PRIMARY KEY,
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+  code VARCHAR(20) NOT NULL,
+  duration VARCHAR(20),
+  product_name VARCHAR(255),
+  generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS app_version (
+  id SERIAL PRIMARY KEY,
+  force_update BOOLEAN NOT NULL DEFAULT FALSE,
+  latest_version VARCHAR(20) NOT NULL DEFAULT '1.0',
+  min_version VARCHAR(20) NOT NULL DEFAULT '1.0',
+  download_url TEXT,
+  message TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS cheat_app_prices (
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  duration VARCHAR(20) NOT NULL,
+  price INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (product_id, duration)
+);
+
+CREATE TABLE IF NOT EXISTS config_links (
+  key VARCHAR(50) PRIMARY KEY,
+  label VARCHAR(100) NOT NULL,
+  url TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_available ON products(is_available);
@@ -86,13 +162,12 @@ CREATE INDEX IF NOT EXISTS idx_cart_user ON cart_items(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_visitor_logs_date ON visitor_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_order_keys_order ON order_keys(order_id);
 
 -- Default QRIS row
 INSERT INTO qris_settings (id) VALUES (1) ON CONFLICT DO NOTHING;
 
--- Seed categories
+-- Seed default categories
 INSERT INTO categories (name, slug) VALUES
   ('Mobile Legends', 'mobile-legends')
 ON CONFLICT (slug) DO NOTHING;
-
--- NOTE: Run scripts/create-admin.ts to create the first admin account

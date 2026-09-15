@@ -1,13 +1,14 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
+import { randomInt } from 'node:crypto';
 
 const VALID_DURATIONS = ['3d', '7d', '30d', 'permanent'] as const;
 type Duration = (typeof VALID_DURATIONS)[number];
 
 function generateCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // excludes confusing chars like O/0, I/1
   const part = (len: number) =>
-    Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    Array.from({ length: len }, () => chars[randomInt(0, chars.length)]).join('');
   return `ZALL-${part(4)}-${part(4)}`;
 }
 

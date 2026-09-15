@@ -25,11 +25,12 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     const tutorialUrl: string = (body.tutorial_video_url ?? '').trim();
 
     // Validate URLs if provided
-    if (bypassLink && !bypassLink.startsWith('http')) {
-      return new Response(JSON.stringify({ error: 'Link bypass harus URL valid (http/https)' }), { status: 400 });
+    const isValidUrl = (u: string) => /^https?:\/\/[^\s$.?#].[^\s]*$/i.test(u);
+    if (bypassLink && !isValidUrl(bypassLink)) {
+      return new Response(JSON.stringify({ error: 'Link bypass harus URL valid (http:// atau https://)' }), { status: 400 });
     }
-    if (tutorialUrl && !tutorialUrl.startsWith('http')) {
-      return new Response(JSON.stringify({ error: 'Link tutorial harus URL valid (http/https)' }), { status: 400 });
+    if (tutorialUrl && !isValidUrl(tutorialUrl)) {
+      return new Response(JSON.stringify({ error: 'Link tutorial harus URL valid (http:// atau https://)' }), { status: 400 });
     }
 
     await sql`

@@ -13,9 +13,9 @@ config();
 const sql = neon(process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL!);
 
 async function main() {
-  const email = 'admin@pusatmlbb.com';
-  const username = 'admin';
-  const password = 'Admin@PusatMLBB!'; // Change immediately after first login
+  const email = process.env.ADMIN_EMAIL || 'admin@pusatmlbb.com';
+  const username = process.env.ADMIN_USERNAME || 'admin';
+  const password = process.env.ADMIN_PASSWORD || 'Admin@PusatMLBB!'; // Can be set via ADMIN_PASSWORD in .env
 
   const hash = await bcrypt.hash(password, 12);
   const id = randomUUID();

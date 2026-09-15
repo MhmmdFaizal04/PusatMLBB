@@ -32,6 +32,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return new Response(JSON.stringify({ error: 'Product ID wajib diisi' }), { status: 400 });
     }
 
+    const qty = Math.max(1, Math.min(100, Math.floor(Number(quantity) || 1)));
+
     // Check product exists and available
     const product = await sql`
       SELECT p.id, p.stock, p.is_available, c.slug AS category_slug
@@ -65,7 +67,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (isCheat && validDuration) {
       await sql`
         INSERT INTO cart_items (user_id, product_id, quantity, cheat_duration)
-        VALUES (${locals.user.userId}, ${productId}, ${quantity}, ${validDuration})
+        VALUES (${locals.user.userId}, ${productId}, ${qty}, ${validDuration})
         ON CONFLICT (user_id, product_id)
         DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity,
                       cheat_duration = EXCLUDED.cheat_duration
@@ -73,7 +75,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     } else {
       await sql`
         INSERT INTO cart_items (user_id, product_id, quantity)
-        VALUES (${locals.user.userId}, ${productId}, ${quantity})
+        VALUES (${locals.user.userId}, ${productId}, ${qty})
         ON CONFLICT (user_id, product_id)
         DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
       `;
