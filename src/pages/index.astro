@@ -86,33 +86,33 @@ const fmt = (p: number) =>
     </div>
   </section>
 
-  <!-- Draft Hoki Banner -->
-  <section id="dh-banner" class="border-b border-border">
+  <!-- Tutorial Banner -->
+  <section id="tut-banner" class="border-b border-border">
     <div class="max-w-7xl mx-auto px-4 py-6 md:py-8">
       <div class="relative overflow-hidden bg-gradient-to-r from-surface-2 via-brand/5 to-surface-2 border border-brand/20 rounded-3xl p-6 md:p-10">
         <div class="absolute inset-0 bg-gradient-to-br from-brand/5 via-transparent to-purple-900/5 pointer-events-none"></div>
-        <div class="absolute -top-10 -right-10 w-56 h-56 bg-brand/5 rounded-full blur-3xl pointer-events-none" id="dh-banner-glow"></div>
+        <div class="absolute -top-10 -right-10 w-56 h-56 bg-brand/5 rounded-full blur-3xl pointer-events-none" id="tut-banner-glow"></div>
         <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-10">
           <!-- Icon -->
-          <div id="dh-banner-icon" class="shrink-0 w-20 h-20 rounded-3xl bg-brand/20 border border-brand/30 flex items-center justify-center shadow-lg shadow-brand/10">
-            <svg class="w-10 h-10 text-brand" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <div id="tut-banner-icon" class="shrink-0 w-20 h-20 rounded-3xl bg-brand/20 border border-brand/30 flex items-center justify-center shadow-lg shadow-brand/10">
+            <svg class="w-10 h-10 text-brand" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
           </div>
           <!-- Text -->
-          <div id="dh-banner-text" class="flex-1 text-center md:text-left">
+          <div id="tut-banner-text" class="flex-1 text-center md:text-left">
             <span class="inline-block text-xs font-semibold bg-brand/10 text-brand px-2.5 py-1 rounded-full border border-brand/20 mb-2">
-              Rank Booster App
+              Video Tutorial
             </span>
-            <h2 class="text-xl md:text-2xl font-black text-white mb-1">Download Draft Hoki — Naik Rank Lebih Cepat!</h2>
-            <p class="text-muted text-sm max-w-lg">Aplikasi draft & rank booster Mobile Legends gratis. Analisis hero pick terbaik, tier list update otomatis, 100% aman.</p>
+            <h2 class="text-xl md:text-2xl font-black text-white mb-1">Cara Pasang Config — Ikuti Video Step by Step</h2>
+            <p class="text-muted text-sm max-w-lg">Panduan pemasangan config Mobile Legends yang mudah diikuti. Pilih video sesuai jenis config, langsung praktek.</p>
           </div>
           <!-- CTA -->
           <a
-            id="dh-banner-btn"
-            href="/draft-hoki"
+            id="tut-banner-btn"
+            href="/tutorial"
             class="shrink-0 inline-flex items-center gap-2 px-6 py-3.5 bg-brand hover:bg-brand-hover text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-brand/20 hover:shadow-brand/40 hover:-translate-y-0.5"
           >
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 16l-4-4h3V4h2v8h3l-4 4zm-7 2h14v2H5v-2z"/></svg>
-            Download Sekarang
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            Tonton Tutorial
           </a>
         </div>
       </div>
@@ -296,31 +296,31 @@ const fmt = (p: number) =>
     });
   });
 
-  // ─── Draft Hoki Banner ─────────────────────────────────────────────────────────
-  gsap.from('#dh-banner > div > div', {
+  // ─── Tutorial Banner ───────────────────────────────────────────────────────────
+  gsap.from('#tut-banner > div > div', {
     opacity: 0,
     y: 50,
     scale: 0.97,
     duration: 0.8,
     ease: 'power3.out',
     scrollTrigger: {
-      trigger: '#dh-banner',
+      trigger: '#tut-banner',
       start: 'top 85%',
     },
   });
 
-  gsap.from('#dh-banner-icon', {
+  gsap.from('#tut-banner-icon', {
     opacity: 0,
     scale: 0.5,
     duration: 0.7,
     ease: 'back.out(2)',
     scrollTrigger: {
-      trigger: '#dh-banner',
+      trigger: '#tut-banner',
       start: 'top 85%',
     },
   });
 
-  gsap.to('#dh-banner-icon', {
+  gsap.to('#tut-banner-icon', {
     y: -6,
     duration: 2.5,
     ease: 'sine.inOut',
@@ -329,7 +329,7 @@ const fmt = (p: number) =>
     delay: 1,
   });
 
-  gsap.to('#dh-banner-glow', {
+  gsap.to('#tut-banner-glow', {
     scale: 1.3,
     opacity: 0.6,
     duration: 3,

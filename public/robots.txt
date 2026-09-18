@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Allow: /products
 Allow: /products/
+Allow: /tutorial
 Allow: /login
 Allow: /register
 

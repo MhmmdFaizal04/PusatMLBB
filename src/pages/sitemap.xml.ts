@@ -10,6 +10,7 @@ export const GET: APIRoute = async () => {
   const staticPages: { url: string; priority: string; changefreq: string; lastmod?: string }[] = [
     { url: '/', priority: '1.0', changefreq: 'daily' },
     { url: '/products', priority: '0.9', changefreq: 'daily' },
+    { url: '/tutorial', priority: '0.8', changefreq: 'weekly' },
     { url: '/login', priority: '0.5', changefreq: 'monthly' },
     { url: '/register', priority: '0.5', changefreq: 'monthly' },
   ];

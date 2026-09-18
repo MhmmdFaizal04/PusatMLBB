@@ -155,6 +155,18 @@ CREATE TABLE IF NOT EXISTS config_links (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Video tutorial pemasangan config (landing page /tutorial)
+CREATE TABLE IF NOT EXISTS tutorial_videos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title VARCHAR(150) NOT NULL,
+  description TEXT,
+  youtube_id VARCHAR(20) NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_available ON products(is_available);
@@ -163,6 +175,7 @@ CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_visitor_logs_date ON visitor_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_order_keys_order ON order_keys(order_id);
+CREATE INDEX IF NOT EXISTS idx_tutorial_videos_active ON tutorial_videos(is_active, sort_order);
 
 -- Default QRIS row
 INSERT INTO qris_settings (id) VALUES (1) ON CONFLICT DO NOTHING;

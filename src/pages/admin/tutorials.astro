@@ -1,0 +1,459 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { sql } from '../../lib/db';
+import {
+  ensureTutorialTable,
+  type TutorialVideo,
+} from '../../lib/tutorials';
+
+await ensureTutorialTable().catch(() => {});
+
+const videos = (await sql`
+  SELECT id, title, description, youtube_id, sort_order, is_active, created_at, updated_at
+  FROM tutorial_videos
+  ORDER BY sort_order ASC, created_at ASC
+`.catch(() => [])) as TutorialVideo[];
+
+const activeCount = videos.filter((v) => v.is_active).length;
+---
+
+<AdminLayout title="Tutorial Config - PusatMLBB">
+  <div class="max-w-4xl space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 class="text-xl font-black text-white">Video Tutorial Config</h1>
+        <p class="text-muted text-sm mt-0.5">
+          Atur video yang tampil di landing page
+          <a href="/tutorial" target="_blank" rel="noopener" class="text-brand hover:underline">/tutorial</a>.
+          Hanya video berstatus <span class="text-green-400 font-medium">Aktif</span> yang ditampilkan.
+        </p>
+      </div>
+      <button
+        id="btn-add"
+        class="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl text-sm transition-colors"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-7-7h14" />
+        </svg>
+        Tambah Video
+      </button>
+    </div>
+
+    <!-- Summary -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div class="bg-surface border border-border rounded-2xl px-4 py-3">
+        <p class="text-xs text-muted">Total Video</p>
+        <p class="text-lg font-black text-white tabular-nums" id="stat-total">{videos.length}</p>
+      </div>
+      <div class="bg-surface border border-border rounded-2xl px-4 py-3">
+        <p class="text-xs text-muted">Tampil di Landing</p>
+        <p class="text-lg font-black text-green-400 tabular-nums" id="stat-active">{activeCount}</p>
+      </div>
+      <div class="bg-surface border border-border rounded-2xl px-4 py-3">
+        <p class="text-xs text-muted">Disembunyikan</p>
+        <p class="text-lg font-black text-muted tabular-nums" id="stat-hidden">{videos.length - activeCount}</p>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div id="msg-error" class="hidden p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm"></div>
+    <div id="msg-success" class="hidden p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm"></div>
+
+    <!-- List -->
+    <div id="video-list" class="space-y-3">
+      {videos.length === 0 ? (
+        <div id="empty-state" class="bg-surface border border-dashed border-border rounded-2xl py-16 text-center">
+          <svg class="w-12 h-12 mx-auto text-border mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <p class="text-muted text-sm">Belum ada video tutorial.</p>
+          <p class="text-faint text-xs mt-1">Klik "Tambah Video" untuk menambahkan video pertama.</p>
+        </div>
+      ) : (
+        videos.map((v) => (
+          <div
+            class="bg-surface border border-border rounded-2xl p-4 flex flex-col sm:flex-row gap-4"
+            data-video-row={v.id}
+            data-youtube-id={v.youtube_id}
+            data-title={v.title}
+            data-description={v.description ?? ''}
+            data-sort-order={String(v.sort_order)}
+            data-is-active={String(v.is_active)}
+          >
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start gap-2 flex-wrap">
+                <span class="shrink-0 inline-flex items-center justify-center min-w-7 h-6 px-2 rounded-lg bg-surface-3 text-faint text-xs font-bold tabular-nums" data-order-badge>
+                  #{v.sort_order}
+                </span>
+                <span
+                  data-status-badge
+                  class={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                    v.is_active
+                      ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                      : 'bg-surface-3 border-border text-muted'
+                  }`}
+                >
+                  {v.is_active ? 'Aktif' : 'Disembunyikan'}
+                </span>
+              </div>
+              <h2 class="font-bold text-white mt-2 truncate" data-title-text>{v.title}</h2>
+              {v.description && (
+                <p class="text-muted text-sm mt-1 line-clamp-2" data-desc-text>{v.description}</p>
+              )}
+              <p class="text-faint text-xs mt-2 font-mono truncate" data-ytid-text>
+                YouTube: {v.youtube_id}
+              </p>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex sm:flex-col items-stretch gap-2 shrink-0">
+              <button
+                class="btn-toggle flex-1 sm:flex-none px-3 py-2 text-xs font-semibold rounded-lg border border-border text-muted hover:text-text hover:bg-surface-2 transition-colors"
+                data-id={v.id}
+              >
+                {v.is_active ? 'Sembunyikan' : 'Tampilkan'}
+              </button>
+              <button
+                class="btn-edit flex-1 sm:flex-none px-3 py-2 text-xs font-semibold rounded-lg bg-brand/10 border border-brand/30 text-brand hover:bg-brand/20 transition-colors"
+                data-id={v.id}
+              >
+                Edit
+              </button>
+              <button
+                class="btn-delete flex-1 sm:flex-none px-3 py-2 text-xs font-semibold rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+                data-id={v.id}
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div
+    id="modal"
+    class="hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm items-center justify-center p-4 overflow-y-auto"
+  >
+    <div class="bg-surface border border-border rounded-2xl w-full max-w-lg my-8">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+        <h2 id="modal-title" class="font-bold text-white">Tambah Video Tutorial</h2>
+        <button id="modal-close" class="text-muted hover:text-text transition-colors" aria-label="Tutup">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="video-form" class="px-6 py-5 space-y-4">
+        <input type="hidden" id="f-id" value="" />
+
+        <div id="form-error" class="hidden p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm"></div>
+
+        <div>
+          <label class="block text-xs font-medium text-white mb-1.5" for="f-title">
+            Judul Video <span class="text-brand">*</span>
+          </label>
+          <input
+            type="text" id="f-title" maxlength="150" required
+            placeholder="Contoh: Cara Pasang Config Drone di Android"
+            class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-white mb-1.5" for="f-url">
+            Link YouTube <span class="text-brand">*</span>
+          </label>
+          <input
+            type="text" id="f-url" required
+            placeholder="https://youtu.be/xxxxxxxxxxx"
+            class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors"
+          />
+          <p class="text-faint text-xs mt-1.5">
+            Menerima link youtu.be, /watch?v=, /embed/, /shorts/, atau ID video langsung.
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-white mb-1.5" for="f-desc">Deskripsi Singkat</label>
+          <textarea
+            id="f-desc" rows="3" maxlength="600"
+            placeholder="Langkah singkat yang dibahas di video ini (opsional)"
+            class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors resize-none"
+          ></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-white mb-1.5" for="f-order">Urutan Tampil</label>
+            <input
+              type="number" id="f-order" min="0" max="9999" step="1"
+              placeholder="0"
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-muted focus:outline-none focus:border-brand/50 transition-colors"
+            />
+            <p class="text-faint text-xs mt-1.5">Angka kecil tampil lebih dulu.</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-white mb-1.5" for="f-active">Status</label>
+            <select
+              id="f-active"
+              class="w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand/50 transition-colors"
+            >
+              <option value="true">Aktif — tampil di landing</option>
+              <option value="false">Disembunyikan</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <button
+            type="submit" id="f-submit"
+            class="flex-1 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            Simpan
+          </button>
+          <button
+            type="button" id="modal-cancel"
+            class="px-5 py-3 border border-border text-muted hover:text-text hover:bg-surface-2 font-semibold rounded-xl text-sm transition-colors"
+          >
+            Batal
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  const modal = document.getElementById('modal') as HTMLDivElement;
+  const modalTitle = document.getElementById('modal-title') as HTMLHeadingElement;
+  const form = document.getElementById('video-form') as HTMLFormElement;
+  const fId = document.getElementById('f-id') as HTMLInputElement;
+  const fTitle = document.getElementById('f-title') as HTMLInputElement;
+  const fUrl = document.getElementById('f-url') as HTMLInputElement;
+  const fDesc = document.getElementById('f-desc') as HTMLTextAreaElement;
+  const fOrder = document.getElementById('f-order') as HTMLInputElement;
+  const fActive = document.getElementById('f-active') as HTMLSelectElement;
+  const fSubmit = document.getElementById('f-submit') as HTMLButtonElement;
+  const formError = document.getElementById('form-error') as HTMLDivElement;
+  const msgError = document.getElementById('msg-error') as HTMLDivElement;
+  const msgSuccess = document.getElementById('msg-success') as HTMLDivElement;
+
+  // ── Mirror of the server-side YouTube id parser, for client-side validation ──
+  const YT_ID = /^[A-Za-z0-9_-]{11}$/;
+  function parseYouTubeId(input: string): string | null {
+    const raw = (input ?? '').trim();
+    if (!raw) return null;
+    if (YT_ID.test(raw)) return raw;
+    let url: URL;
+    try {
+      url = new URL(raw.includes('://') ? raw : `https://${raw}`);
+    } catch {
+      return null;
+    }
+    const host = url.hostname.replace(/^www\./, '').toLowerCase();
+    const allowed = ['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com', 'youtu.be'];
+    if (!allowed.includes(host)) return null;
+    const candidates: (string | null | undefined)[] = [];
+    if (host === 'youtu.be') {
+      candidates.push(url.pathname.slice(1).split('/')[0]);
+    } else {
+      candidates.push(url.searchParams.get('v'));
+      const seg = url.pathname.split('/').filter(Boolean);
+      if (seg.length >= 2 && ['embed', 'shorts', 'live', 'v'].includes(seg[0]!.toLowerCase())) {
+        candidates.push(seg[1]);
+      }
+    }
+    for (const c of candidates) if (c && YT_ID.test(c)) return c;
+    return null;
+  }
+
+  // ── Modal helpers ───────────────────────────────────────────────────
+  function openModal(mode: 'create' | 'edit') {
+    formError.classList.add('hidden');
+    modalTitle.textContent = mode === 'create' ? 'Tambah Video Tutorial' : 'Edit Video Tutorial';
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => fTitle.focus(), 50);
+  }
+
+  function closeModal() {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+    form.reset();
+    fId.value = '';
+  }
+
+  document.getElementById('btn-add')!.addEventListener('click', () => {
+    form.reset();
+    fId.value = '';
+    fActive.value = 'true';
+    openModal('create');
+  });
+
+  document.getElementById('modal-close')!.addEventListener('click', closeModal);
+  document.getElementById('modal-cancel')!.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+  });
+
+  // ── Page-level toast ────────────────────────────────────────────────
+  function toast(el: HTMLDivElement, text: string) {
+    msgError.classList.add('hidden');
+    msgSuccess.classList.add('hidden');
+    el.textContent = text;
+    el.classList.remove('hidden');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    setTimeout(() => el.classList.add('hidden'), 4000);
+  }
+
+  // ── Row actions (delegated) ─────────────────────────────────────────
+  document.getElementById('video-list')!.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement;
+
+    // Edit
+    const editBtn = target.closest<HTMLButtonElement>('.btn-edit');
+    if (editBtn) {
+      const row = editBtn.closest<HTMLElement>('[data-video-row]')!;
+      fId.value = editBtn.dataset.id!;
+      fTitle.value = row.dataset.title ?? '';
+      fDesc.value = row.dataset.description ?? '';
+      fUrl.value = `https://youtu.be/${row.dataset.youtubeId}`;
+      fOrder.value = row.dataset.sortOrder ?? '0';
+      fActive.value = row.dataset.isActive === 'true' ? 'true' : 'false';
+      openModal('edit');
+      return;
+    }
+
+    // Toggle active
+    const toggleBtn = target.closest<HTMLButtonElement>('.btn-toggle');
+    if (toggleBtn) {
+      const row = toggleBtn.closest<HTMLElement>('[data-video-row]')!;
+      const next = row.dataset.isActive !== 'true';
+      toggleBtn.disabled = true;
+      try {
+        const res = await fetch(`/api/admin/tutorials/${toggleBtn.dataset.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_active: next }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? 'Gagal mengubah status');
+
+        row.dataset.isActive = String(next);
+        toggleBtn.textContent = next ? 'Sembunyikan' : 'Tampilkan';
+        const badge = row.querySelector<HTMLElement>('[data-status-badge]')!;
+        badge.className = next
+          ? 'shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border bg-green-500/10 border-green-500/30 text-green-400'
+          : 'shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border bg-surface-3 border-border text-muted';
+        badge.textContent = next ? 'Aktif' : 'Disembunyikan';
+        recountStats();
+        toast(msgSuccess, next ? 'Video ditampilkan di landing page.' : 'Video disembunyikan dari landing page.');
+      } catch (err) {
+        toast(msgError, (err as Error).message);
+      } finally {
+        toggleBtn.disabled = false;
+      }
+      return;
+    }
+
+    // Delete
+    const delBtn = target.closest<HTMLButtonElement>('.btn-delete');
+    if (delBtn) {
+      const row = delBtn.closest<HTMLElement>('[data-video-row]')!;
+      if (!confirm(`Hapus video "${row.dataset.title}"? Tindakan ini tidak bisa dibatalkan.`)) return;
+      delBtn.disabled = true;
+      try {
+        const res = await fetch(`/api/admin/tutorials/${delBtn.dataset.id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? 'Gagal menghapus video');
+        row.remove();
+        recountStats();
+        toast(msgSuccess, 'Video berhasil dihapus.');
+      } catch (err) {
+        delBtn.disabled = false;
+        toast(msgError, (err as Error).message);
+      }
+      return;
+    }
+  });
+
+  // ── Stats ───────────────────────────────────────────────────────────
+  function recountStats() {
+    const rows = document.querySelectorAll<HTMLElement>('[data-video-row]');
+    const total = rows.length;
+    let active = 0;
+    rows.forEach((r) => {
+      if (r.dataset.isActive === 'true') active++;
+    });
+    document.getElementById('stat-total')!.textContent = String(total);
+    document.getElementById('stat-active')!.textContent = String(active);
+    document.getElementById('stat-hidden')!.textContent = String(total - active);
+  }
+
+  // ── Create / update ─────────────────────────────────────────────────
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError.classList.add('hidden');
+
+    const title = fTitle.value.trim();
+    const youtubeUrl = fUrl.value.trim();
+
+    if (!title) {
+      formError.textContent = 'Judul video wajib diisi.';
+      formError.classList.remove('hidden');
+      return;
+    }
+    if (!parseYouTubeId(youtubeUrl)) {
+      formError.textContent = 'Link YouTube tidak valid. Contoh: https://youtu.be/xxxxxxxxxxx';
+      formError.classList.remove('hidden');
+      return;
+    }
+
+    const payload: Record<string, unknown> = {
+      title,
+      description: fDesc.value.trim(),
+      youtube_url: youtubeUrl,
+      is_active: fActive.value === 'true',
+    };
+    if (fOrder.value.trim() !== '') payload.sort_order = Number(fOrder.value);
+
+    const editingId = fId.value;
+    fSubmit.disabled = true;
+    fSubmit.textContent = 'Menyimpan…';
+
+    try {
+      const res = await fetch(
+        editingId ? `/api/admin/tutorials/${editingId}` : '/api/admin/tutorials',
+        {
+          method: editingId ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Gagal menyimpan video');
+
+      closeModal();
+      // Reload so ordering and the landing-page preview stay consistent
+      location.reload();
+    } catch (err) {
+      formError.textContent = (err as Error).message;
+      formError.classList.remove('hidden');
+    } finally {
+      fSubmit.disabled = false;
+      fSubmit.textContent = 'Simpan';
+    }
+  });
+</script>

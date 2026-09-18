@@ -98,9 +98,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline'",           // Astro inline scripts
       "style-src 'self' 'unsafe-inline'",            // Tailwind inline styles
-      "img-src 'self' data: https://res.cloudinary.com",
+      "img-src 'self' data: https://res.cloudinary.com https://i.ytimg.com",
       "connect-src 'self'",
       "font-src 'self'",
+      "frame-src https://www.youtube-nocookie.com",
       "frame-ancestors 'none'",
     ].join('; ')
   );
